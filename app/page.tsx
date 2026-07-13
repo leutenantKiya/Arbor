@@ -1,15 +1,33 @@
-import Image from "next/image";
-import Link from "next/link";
-import { PosterCard } from "@/components/poster-card";
-import { films, formatRuntime } from "@/lib/films";
+import Image from 'next/image';
+import Link from 'next/link';
+import { PosterCard } from '@/components/poster-card';
+import { formatRuntime } from '@/lib/films';
+import { getFilms } from '@/lib/db/queries';
 
 const rows: { title: string; filter: (category: string) => boolean }[] = [
-  { title: "Featured", filter: () => true },
-  { title: "Animation", filter: (c) => c === "Animation" },
-  { title: "Beyond the Festival", filter: (c) => c !== "Animation" },
+  { title: 'Featured', filter: () => true },
+  { title: 'Animation', filter: (c) => c === 'Animation' },
+  { title: 'Beyond the Festival', filter: (c) => c !== 'Animation' },
 ];
 
-export default function HomePage() {
+export default async function HomePage() {
+  const films = await getFilms();
+  if (films.length === 0) {
+    return (
+      <div className="pb-20">
+        <div className="mx-auto max-w-7xl px-6 pt-28">
+          <div className="rounded-3xl border border-line/60 bg-surface p-12 text-center text-cream">
+            <h1 className="text-3xl font-semibold">No films were found in the database.</h1>
+            <p className="mt-4 text-sage">
+              The Neon Postgres connection is active, but the catalog is empty.
+              Run <code className="rounded bg-bark/70 px-2 py-1 text-sm">npm run db:seed</code> and refresh.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   const hero = films[0];
 
   return (
@@ -56,22 +74,29 @@ export default function HomePage() {
 
       {/* Rows */}
       <div className="mx-auto max-w-7xl space-y-10 px-6 pt-10">
-        {rows.map((row) => {
-          const items = films.filter((f) => row.filter(f.category));
-          if (items.length === 0) return null;
-          return (
-            <section key={row.title}>
-              <h2 className="mb-4 font-display text-2xl font-medium">
-                {row.title}
-              </h2>
-              <div className="row-scroll flex gap-4 overflow-x-auto pb-2">
-                {items.map((film) => (
-                  <PosterCard key={film.slug} film={film} />
-                ))}
-              </div>
-            </section>
-          );
-        })}
+        {films.length === 0 ? (
+          <div className="rounded-xl border border-line/60 bg-surface p-8 text-center text-cream">
+            <p className="text-xl font-semibold">No films found in the database.</p>
+            <p className="mt-2 text-sm text-sage">Run `npm run db:seed` and refresh the page.</p>
+          </div>
+        ) : (
+          rows.map((row) => {
+            const items = films.filter((f) => row.filter(f.category));
+            if (items.length === 0) return null;
+            return (
+              <section key={row.title}>
+                <h2 className="mb-4 font-display text-2xl font-medium">
+                  {row.title}
+                </h2>
+                <div className="row-scroll flex gap-4 overflow-x-auto pb-2">
+                  {items.map((film) => (
+                    <PosterCard key={film.slug} film={film} />
+                  ))}
+                </div>
+              </section>
+            );
+          })
+        )}
       </div>
     </div>
   );

@@ -2,6 +2,8 @@ import { sql } from "drizzle-orm";
 import {
   bigserial,
   boolean,
+  check,
+  index,
   integer,
   pgTable,
   text,
@@ -10,20 +12,44 @@ import {
   uuid,
 } from "drizzle-orm/pg-core";
 
+// ── Auth accounts (email + password hash, self-contained — no external auth service) ──
+export const accounts = pgTable(
+  "accounts",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    email: text("email").notNull(),
+    passwordHash: text("password_hash").notNull(),
+    name: text("name").notNull().default(""),
+    walletAddress: text("wallet_address").notNull().default("0x0000000000000000000000000000000000000000"),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [uniqueIndex("accounts_email_unique").on(t.email)],
+);
+
 // Ledger integrity rules (ARCHITECTURE.md §5, §8):
 // - balance_seconds is always recomputable from purchases + gifts − debit_events
 // - every balance mutation happens inside one ACID transaction
 // - the client never computes balances; it only displays server responses
 
-export const users = pgTable("users", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  particleUuid: text("particle_uuid").notNull().unique(),
-  walletAddress: text("wallet_address").notNull(),
-  balanceSeconds: integer("balance_seconds").notNull().default(0),
-  createdAt: timestamp("created_at", { withTimezone: true })
-    .notNull()
-    .defaultNow(),
-});
+export const users = pgTable(
+  "users",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    particleUuid: text("particle_uuid").notNull().unique(),
+    walletAddress: text("wallet_address").notNull(),
+    balanceSeconds: integer("balance_seconds").notNull().default(0),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    // §8 "Rate abuse": balance can't go negative — enforced in the schema
+    // itself, same principle as one-active-session below (not app-code-only)
+    check("balance_seconds_non_negative", sql`${t.balanceSeconds} >= 0`),
+  ],
+);
 
 export const filmmakers = pgTable("filmmakers", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -65,6 +91,9 @@ export const playbackSessions = pgTable(
     startedAt: timestamp("started_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
+    // set when the session is actually closed — distinct from lastBeatAt,
+    // which only reflects the last heartbeat received
+    endedAt: timestamp("ended_at", { withTimezone: true }),
   },
   (t) => [
     // single active session per user, enforced by the schema itself
@@ -74,18 +103,26 @@ export const playbackSessions = pgTable(
   ],
 );
 
-export const debitEvents = pgTable("debit_events", {
-  id: bigserial("id", { mode: "number" }).primaryKey(),
-  sessionId: uuid("session_id")
-    .notNull()
-    .references(() => playbackSessions.id),
-  seconds: integer("seconds").notNull(),
-  // filmmaker's 90% share of this debit, in USDC cents
-  filmmakerCents: integer("filmmaker_cents").notNull(),
-  createdAt: timestamp("created_at", { withTimezone: true })
-    .notNull()
-    .defaultNow(),
-});
+export const debitEvents = pgTable(
+  "debit_events",
+  {
+    id: bigserial("id", { mode: "number" }).primaryKey(),
+    sessionId: uuid("session_id")
+      .notNull()
+      .references(() => playbackSessions.id),
+    seconds: integer("seconds").notNull(),
+    // filmmaker's 90% share of this debit, in USDC cents
+    filmmakerCents: integer("filmmaker_cents").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    // ARCHITECTURE.md §5 Indexing: "debit_events (session_id, created_at)
+    // for Studio queries" — was missing entirely
+    index("debit_events_session_created_idx").on(t.sessionId, t.createdAt),
+  ],
+);
 
 export const purchases = pgTable("purchases", {
   id: uuid("id").primaryKey().defaultRandom(),

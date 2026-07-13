@@ -1,19 +1,15 @@
-import Image from "next/image";
-import Link from "next/link";
-import { notFound } from "next/navigation";
-import { films, formatRuntime, getFilm } from "@/lib/films";
-
-export function generateStaticParams() {
-  return films.map((f) => ({ slug: f.slug }));
-}
+import Image from 'next/image';
+import Link from 'next/link';
+import { notFound } from 'next/navigation';
+import { getFilmBySlug } from '@/lib/db/queries';
+import { formatRuntime } from '@/lib/films';
 
 export default async function FilmPage({
   params,
 }: {
-  params: Promise<{ slug: string }>;
+  params: { slug: string };
 }) {
-  const { slug } = await params;
-  const film = getFilm(slug);
+  const film = await getFilmBySlug(params.slug);
   if (!film) notFound();
 
   return (
