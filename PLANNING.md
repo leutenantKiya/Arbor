@@ -111,8 +111,8 @@ Next.js (App Router, TS) ── one repo, one deploy (Vercel)
 ├─ Viewer UI + Studio UI (React, Tailwind, custom player over <video>/hls.js)
 ├─ API routes: /api/session/heartbeat · /api/packages/purchase · /api/gift · /api/gift/claim
 │              /api/studio/earnings · /api/settle
-├─ Postgres (Supabase) + Prisma: users, balances, films, sessions, debit_events,
-│                                gift_claims, settlements
+├─ Neon Postgres + Drizzle (neon-http driver): users, balances, films, sessions, debit_events,
+│                                              gift_claims, settlements — see ARCHITECTURE.md
 │
 ├─ Particle Network
 │   ├─ Auth: social login → Universal Account (embedded, invisible)
@@ -124,7 +124,7 @@ Next.js (App Router, TS) ── one repo, one deploy (Vercel)
 │        purchase(packageId)                          — pulls test-USDC, emits PackagePurchased
 │        settle(address[] filmmakers, uint[] amounts) — owner (backend) batch payout, emits Settled
 │
-└─ Content: Blender Foundation + public-domain films, MP4/HLS on Vercel Blob or R2, ~6–8 titles
+└─ Content: Blender Foundation + public-domain films, MP4 on Cloudflare R2 (zero egress), ~6–8 titles
 ```
 
 - **On-chain = money moments only:** purchase in, settlement out. Everything in between lives in the server ledger. Never stream transactions.
