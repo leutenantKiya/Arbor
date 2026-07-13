@@ -1,14 +1,6 @@
-// Particle Network configuration — day-1 spike scaffold.
-//
-// Findings from the docs spike (2026-07-13):
-// - Social login + embedded wallet: @particle-network/authkit
-//   (useEthereum() → { address, provider }); supports Arbitrum Sepolia (421614).
-// - Universal Accounts: @particle-network/universal-account-sdk —
-//   MAINNET ONLY (Ethereum, BNB, X Layer, Base, Arbitrum, Solana).
-//   A testnet demo therefore uses Particle Auth + AA/paymaster, with UA as
-//   the mainnet path. Chain decision tracked in the day-1 report.
-//
-// Real keys come from dashboard.particle.network → .env (see .env.example).
+// Particle Network credentials — read from env, never hardcoded.
+// Server-side verification (lib/particle/server.ts) reads projectId from
+// process.env directly; this is the client-side view.
 
 export const particleConfig = {
   projectId: process.env.NEXT_PUBLIC_PARTICLE_PROJECT_ID ?? "",

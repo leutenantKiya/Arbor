@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Fraunces, Inter } from "next/font/google";
 import { Nav } from "@/components/nav";
+import { ParticleBoundary } from "@/components/particle-boundary";
 import "./globals.css";
 
 const fraunces = Fraunces({
@@ -25,8 +26,10 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${fraunces.variable} ${inter.variable}`}>
       <body>
-        <Nav />
-        <main className="pt-16">{children}</main>
+        <ParticleBoundary>
+          <Nav />
+          <main className="pt-16">{children}</main>
+        </ParticleBoundary>
       </body>
     </html>
   );

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { AuthButton } from "./auth-button";
 import { Logo } from "./logo";
 
 export function Nav() {
@@ -33,12 +34,7 @@ export function Nav() {
           >
             <span className="tabular-nums">2h 30m</span>
           </Link>
-          <button
-            type="button"
-            className="rounded-full bg-cream px-4 py-1.5 text-sm font-medium text-bark transition-opacity hover:opacity-90"
-          >
-            Sign in
-          </button>
+          <AuthButton />
         </div>
       </div>
     </header>
