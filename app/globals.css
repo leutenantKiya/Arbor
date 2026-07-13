@@ -1,0 +1,49 @@
+@import "tailwindcss";
+
+@theme {
+  /* Arbor palette — dark cinema, organic green, projector amber */
+  --color-bark: #0c0f0d;
+  --color-surface: #141813;
+  --color-surface-2: #1c221b;
+  --color-line: #2a322a;
+  --color-moss: #2f6b4f;
+  --color-fern: #48a077;
+  --color-amber: #e8a33d;
+  --color-amber-soft: #f0bc6e;
+  --color-cream: #f2efe9;
+  --color-sage: #98a595;
+
+  --font-display: var(--font-fraunces), Georgia, serif;
+  --font-body: var(--font-inter), system-ui, sans-serif;
+
+  --radius-card: 0.75rem;
+}
+
+html {
+  color-scheme: dark;
+}
+
+body {
+  background-color: var(--color-bark);
+  color: var(--color-cream);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Poster rows scroll horizontally without a visible scrollbar */
+.row-scroll {
+  scrollbar-width: none;
+}
+.row-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
