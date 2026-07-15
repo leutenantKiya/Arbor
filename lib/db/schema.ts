@@ -38,6 +38,9 @@ export const users = pgTable(
   {
     id: uuid("id").primaryKey().defaultRandom(),
     particleUuid: text("particle_uuid").notNull().unique(),
+    // fallback email/password identity — set when the ledger row was
+    // lazy-created from an accounts login instead of a Particle sign-in
+    accountId: uuid("account_id").references(() => accounts.id),
     walletAddress: text("wallet_address").notNull(),
     balanceSeconds: integer("balance_seconds").notNull().default(0),
     createdAt: timestamp("created_at", { withTimezone: true })
@@ -48,6 +51,10 @@ export const users = pgTable(
     // §8 "Rate abuse": balance can't go negative — enforced in the schema
     // itself, same principle as one-active-session below (not app-code-only)
     check("balance_seconds_non_negative", sql`${t.balanceSeconds} >= 0`),
+    // one ledger row per fallback account
+    uniqueIndex("users_account_id_unique")
+      .on(t.accountId)
+      .where(sql`${t.accountId} is not null`),
   ],
 );
 

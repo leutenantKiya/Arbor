@@ -1,15 +1,15 @@
 import Link from 'next/link';
-import { notFound } from 'next/navigation';
-import { getFilmBySlug, getFilms } from '@/lib/db/queries';
+import { notFound, redirect } from 'next/navigation';
+import { getFilmBySlug } from '@/lib/db/queries';
+import { getSession } from '@/lib/auth/server';
+import { VideoPlayer } from '@/components/video-player';
 
-export async function generateStaticParams() {
-  const films = await getFilms();
-  return films.map((film) => ({ slug: film.slug }));
-}
-
-// Day-1 shell: native controls, no metering yet.
-// Day 3 replaces this with the custom player + heartbeat loop + calm gauge.
+// Metered playback requires a signed-in viewer, so this page is always
+// rendered per-request (no generateStaticParams).
 export default async function WatchPage({ params }: { params: Promise<{ slug: string }> }) {
+  const session = await getSession();
+  if (!session) redirect('/auth/sign-in');
+
   const { slug } = await params;
   const film = await getFilmBySlug(slug);
   if (!film) notFound();
@@ -24,13 +24,7 @@ export default async function WatchPage({ params }: { params: Promise<{ slug: st
           ← {film.title}
         </Link>
       </div>
-      <video
-        src={film.videoUrl}
-        poster={film.posterUrl}
-        controls
-        autoPlay
-        className="min-h-0 flex-1 object-contain"
-      />
+      <VideoPlayer film={film} />
     </div>
   );
 }

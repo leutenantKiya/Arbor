@@ -3,6 +3,7 @@ import { z } from "zod";
 import { getDb, schema } from "@/lib/db";
 import { SESSION_COOKIE, SESSION_MAX_AGE_SECONDS, signSession } from "@/lib/auth/session";
 import { verifyParticleUser } from "@/lib/particle/server";
+import { DEV_SEED_BALANCE_SECONDS } from "@/lib/billing";
 
 const bodySchema = z.object({
   uuid: z.string().min(1),
@@ -28,7 +29,11 @@ export async function POST(req: Request) {
   const db = getDb();
   const [user] = await db
     .insert(schema.users)
-    .values({ particleUuid: uuid, walletAddress })
+    // TODO(purchase-flow): drop balanceSeconds here — dev seed only, so a
+    // brand-new Particle user has watch time before the purchase flow exists.
+    // onConflictDoUpdate deliberately does NOT touch balanceSeconds, so an
+    // existing user's balance is never reset on re-login.
+    .values({ particleUuid: uuid, walletAddress, balanceSeconds: DEV_SEED_BALANCE_SECONDS })
     .onConflictDoUpdate({
       target: schema.users.particleUuid,
       set: { walletAddress },

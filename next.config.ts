@@ -44,6 +44,7 @@ const NODE_BUILTIN_POLYFILLS: Record<string, string> = {
 const FS_SHIM = path.join(__dirname, "lib", "shims", "fs.js");
 
 const nextConfig: NextConfig = {
+  reactStrictMode: false,
   images: {
     // Posters are self-hosted in /public/posters. When media moves to
     // Cloudflare R2 (ARCHITECTURE.md §6), add the R2 hostname here.
