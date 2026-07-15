@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { AuthButton } from "./auth-button";
+import { BalancePill } from "./balance-pill";
 import { Logo } from "./logo";
 import { getSession } from "@/lib/auth/server";
 import { db } from "@/lib/db/client";
@@ -17,13 +18,6 @@ async function getUserBalance(userId: string): Promise<number | null> {
   } catch {
     return null;
   }
-}
-
-function formatBalance(seconds: number): string {
-  const h = Math.floor(seconds / 3600);
-  const m = Math.floor((seconds % 3600) / 60);
-  if (h > 0) return `${h}h ${m}m`;
-  return `${m}m`;
 }
 
 export async function Nav() {
@@ -55,16 +49,10 @@ export async function Nav() {
         <div className="ml-auto flex items-center gap-4">
           {session ? (
             <>
-              {/* Live balance pill — real ledger value, calm by design (PLANNING.md §9) */}
-              <Link
-                href="/time"
-                aria-label="Viewing time remaining"
-                className="rounded-full border border-line bg-surface px-3 py-1.5 text-sm text-amber-soft transition-colors hover:border-amber/40"
-              >
-                <span className="tabular-nums">
-                  {balance !== null ? formatBalance(balance) : "-"}
-                </span>
-              </Link>
+              {/* Live balance pill — server renders the ledger value, then the
+                  client component follows heartbeat signals from the player
+                  (PLANNING.md §9) */}
+              <BalancePill initialSeconds={balance} />
               {(session.name || session.email) && (
                 <span className="hidden text-sm text-sage sm:inline">
                   {session.name || session.email}

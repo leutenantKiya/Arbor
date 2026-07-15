@@ -79,3 +79,36 @@ npm run dev          # restart so the DB + code changes are fresh
 
 - `DEV_SEED_BALANCE_SECONDS` seeding in both `sign-in/actions.ts` and
   `verify/route.ts` — replace with the real purchase flow (`/api/purchase/confirm`).
+
+---
+
+## Live balance UI (added 2026-07-16)
+
+Problem: the nav pill was a **server component** — balance baked into HTML at
+page load, frozen until refresh. The player gauge only changed on each 10s
+heartbeat ack, so it jumped in 10s steps.
+
+Fix — display-only, server stays the sole billing authority:
+
+| File | Change |
+|---|---|
+| `lib/balance-bus.ts` | **new** — window CustomEvent bus carrying `{ remainingSeconds, playing }` |
+| `components/balance-pill.tsx` | **new** — client pill: renders the server value first (no loading flash), resyncs on every bus signal, ticks down 1 s/s while `playing` |
+| `components/nav.tsx` | static balance `<span>` → `<BalancePill initialSeconds={balance} />`; the server-side DB query is unchanged |
+| `components/video-player.tsx` | gauge interpolates 1 s/s between acks; emits a bus signal on start ack, every heartbeat ack, pause, exhaustion (0), and unmount (freeze pill) |
+
+```
+heartbeat ack (server truth, every 10s)
+      │
+      ▼
+emitBalance({remainingSeconds, playing}) ──► gauge  (m:ss, ticks 1s locally)
+                                        └──► pill   (h/m,  ticks 1s locally)
+```
+
+Between acks both displays count down locally (cosmetic interpolation); every
+ack snaps them back to the server-confirmed number, so maximum display drift
+is one heartbeat interval. Pause / navigation away freezes the pill at the
+last confirmed value.
+
+The client numbers are never sent to the server — the heartbeat request is
+still only `{ sessionId, seq }`.

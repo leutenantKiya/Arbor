@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { Film } from '@/lib/films';
+import { emitBalance } from '@/lib/balance-bus';
 
 const HEARTBEAT_INTERVAL_MS = 10_000;
 
@@ -49,6 +50,25 @@ export function VideoPlayer({ film }: { film: Film }) {
     const [remainingSeconds, setRemainingSeconds] = useState<number | null>(null);
     const [overlay, setOverlay] = useState<Overlay>(null);
 
+    // Mirror for event emitters that run outside React's render cycle
+    // (pause handler, unmount cleanup) — avoids stale closure values.
+    const remainingRef = useRef<number | null>(null);
+    useEffect(() => {
+        remainingRef.current = remainingSeconds;
+    }, [remainingSeconds]);
+
+    // Cosmetic 1s countdown between heartbeat acks. Server value (set on
+    // every ack) is the only authority — this just interpolates the display
+    // so the gauge and nav pill move smoothly instead of jumping every 10s.
+    useEffect(() => {
+        if (businessState !== 'PLAYING') return;
+        const id = setInterval(
+            () => setRemainingSeconds((s) => (s === null ? s : Math.max(0, s - 1))),
+            1_000,
+        );
+        return () => clearInterval(id);
+    }, [businessState]);
+
     const stopLoop = useCallback(() => {
         if (intervalRef.current) {
             clearInterval(intervalRef.current);
@@ -87,6 +107,11 @@ export function VideoPlayer({ film }: { film: Film }) {
             endSession();
             setBusinessState('PAUSED');
             setOverlay(reason);
+            emitBalance({
+                remainingSeconds:
+                    reason === 'balance_exhausted' ? 0 : remainingRef.current ?? 0,
+                playing: false,
+            });
         },
         [endSession],
     );
@@ -122,6 +147,7 @@ export function VideoPlayer({ film }: { film: Film }) {
                 haltPlayback('balance_exhausted');
                 return;
             }
+            emitBalance({ remainingSeconds: data.remainingSeconds, playing: true });
             setNetworkState('READY');
         } catch {
             // Network drop: keep playing (ARCHITECTURE §4.1 — playback never
@@ -156,6 +182,7 @@ export function VideoPlayer({ film }: { film: Film }) {
             setRemainingSeconds(data.remainingSeconds);
             setBusinessState('PLAYING');
             setNetworkState('READY');
+            emitBalance({ remainingSeconds: data.remainingSeconds, playing: true });
             if (!intervalRef.current) {
                 intervalRef.current = setInterval(sendHeartbeat, HEARTBEAT_INTERVAL_MS);
             }
@@ -169,6 +196,7 @@ export function VideoPlayer({ film }: { film: Film }) {
     const handlePause = useCallback(() => {
         endSession();
         setBusinessState('PAUSED');
+        emitBalance({ remainingSeconds: remainingRef.current ?? 0, playing: false });
     }, [endSession]);
 
     // Page close / tab kill: beacon out the session end.
@@ -178,6 +206,12 @@ export function VideoPlayer({ film }: { film: Film }) {
         return () => {
             window.removeEventListener('pagehide', onPageHide);
             endSession(true); // unmount (client-side navigation away)
+            // Nav layout persists across soft navigation — freeze the pill at
+            // the last confirmed value instead of leaving it ticking.
+            emitBalance({
+                remainingSeconds: remainingRef.current ?? 0,
+                playing: false,
+            });
         };
     }, [endSession]);
 
