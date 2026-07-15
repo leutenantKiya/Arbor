@@ -6,7 +6,12 @@ const ALGORITHM = 'pbkdf2';
 const ITERATIONS = 100_000;
 const KEY_LEN = 32; // 256-bit
 
-async function pbkdf2Hash(password: string, salt: Uint8Array): Promise<Uint8Array> {
+async function pbkdf2Hash(
+  password: string,
+  // ArrayBuffer-backed explicitly: TS 5.9 rejects Uint8Array<ArrayBufferLike>
+  // as BufferSource for crypto.subtle (SharedArrayBuffer isn't transferable).
+  salt: Uint8Array<ArrayBuffer>,
+): Promise<Uint8Array> {
   const enc = new TextEncoder();
   const keyMaterial = await crypto.subtle.importKey(
     'raw',
@@ -29,7 +34,7 @@ function toHex(buf: Uint8Array): string {
     .join('');
 }
 
-function fromHex(hex: string): Uint8Array {
+function fromHex(hex: string): Uint8Array<ArrayBuffer> {
   const result = new Uint8Array(hex.length / 2);
   for (let i = 0; i < hex.length; i += 2) {
     result[i / 2] = parseInt(hex.slice(i, i + 2), 16);

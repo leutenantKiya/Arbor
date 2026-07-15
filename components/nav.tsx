@@ -80,8 +80,10 @@ export async function Nav() {
               Add time
             </Link>
           )}
-          {/* Sign in / sign out — Particle connectkit, both states */}
-          <AuthButton />
+          {/* Sign in / sign out — Particle connectkit, both states.
+              hasSession from the server: the httpOnly cookie is invisible
+              to client JS, so the button can't detect it itself. */}
+          <AuthButton hasSession={!!session} />
         </div>
       </div>
     </header>

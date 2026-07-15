@@ -1,4 +1,4 @@
-import Link from 'next/link';
+import { AuthButton } from '@/components/auth-button';
 import { getSession } from '@/lib/auth/server';
 import { db } from '@/lib/db/client';
 import { users } from '@/lib/db/schema';
@@ -62,12 +62,12 @@ export default async function TimePage() {
           <p className="text-sage">
             Sign in to see your balance and add viewing time.
           </p>
-          <Link
-            href="/auth/sign-in"
-            className="mt-4 inline-block rounded-full bg-amber px-6 py-2.5 text-sm font-semibold text-bark transition-opacity hover:opacity-90"
-          >
-            Sign in
-          </Link>
+          {/* One auth system only: Particle via the nav button
+              (docs/AUTH-ARCHITECTURE.md) — /auth/sign-in is the parked
+              password path and must not be linked from the UI. */}
+          <div className="mt-4 flex justify-center">
+            <AuthButton hasSession={false} />
+          </div>
         </div>
       )}
 
@@ -102,12 +102,9 @@ export default async function TimePage() {
                 Purchase coming soon
               </button>
             ) : (
-              <Link
-                href="/auth/sign-in"
-                className="mt-6 block w-full rounded-full bg-cream/10 py-2.5 text-center text-sm text-sage transition-colors hover:bg-cream/20 hover:text-cream"
-              >
-                Sign in to add time
-              </Link>
+              <p className="mt-6 w-full rounded-full bg-cream/10 py-2.5 text-center text-sm text-sage">
+                Sign in above to add time
+              </p>
             )}
           </div>
         ))}
