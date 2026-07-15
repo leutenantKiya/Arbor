@@ -71,6 +71,32 @@ export const films: Film[] = [
     videoUrl: "https://archive.org/download/ElephantsDream/ed_1024_512kb.mp4",
     posterUrl: "/posters/elephants-dream.jpg",
   },
+  {
+    slug: "cosmos-laundromat",
+    title: "Cosmos Laundromat",
+    synopsis:
+      "A rabbit with a broken heart is offered the chance to live an endless dream — but every wish has its price.",
+    durationSeconds: 335,
+    category: "Fantasy",
+    year: 2015,
+    filmmaker: "Colin Levy — Blender Foundation",
+    videoUrl:
+      "https://download.blender.org/demo/movies/Cosmos_Laundromat_Short_HQ.mp4",
+    posterUrl: "/posters/cosmos-laundromat.jpg",
+  },
+  {
+    slug: "spring",
+    title: "Spring",
+    synopsis:
+      "Spring is a surreal love story told through the changing of the seasons, with stunning character animation and physical comedy.",
+    durationSeconds: 300,
+    category: "Animation",
+    year: 2019,
+    filmmaker: "Andrew Huang — Blender Animation Studio",
+    videoUrl:
+      "https://download.blender.org/demo/movies/SpringShortFilm.mp4",
+    posterUrl: "/posters/spring.jpg",
+  },
 ];
 
 export function getFilm(slug: string): Film | undefined {

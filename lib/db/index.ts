@@ -1,6 +1,10 @@
+import { config as loadEnv } from "dotenv";
 import { neon } from "@neondatabase/serverless";
 import { drizzle } from "drizzle-orm/neon-http";
 import * as schema from "./schema";
+
+loadEnv({ path: ".env.local" });
+loadEnv({ path: ".env" });
 
 // neon-http: each query is a stateless HTTP call — no connection pooling
 // failure mode on serverless (ARCHITECTURE.md §5).

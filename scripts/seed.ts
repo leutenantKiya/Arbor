@@ -1,9 +1,13 @@
 // Seeds the catalog: one demo filmmaker per film + film metadata.
-// Usage: DATABASE_URL=... npm run db:seed   (run db:push first)
+// Usage: npm run db:seed   (run db:push first)
+import { config as loadEnv } from 'dotenv';
 import { neon } from "@neondatabase/serverless";
 import { drizzle } from "drizzle-orm/neon-http";
 import { films as catalog } from "../lib/films";
 import { filmmakers, films } from "../lib/db/schema";
+
+loadEnv({ path: '.env.local' });
+loadEnv({ path: '.env' });
 
 async function main() {
   const url = process.env.DATABASE_URL;

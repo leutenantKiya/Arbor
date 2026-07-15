@@ -1,20 +1,17 @@
-import Link from "next/link";
-import { notFound } from "next/navigation";
-import { films, getFilm } from "@/lib/films";
+import Link from 'next/link';
+import { notFound } from 'next/navigation';
+import { getFilmBySlug, getFilms } from '@/lib/db/queries';
 
-export function generateStaticParams() {
-  return films.map((f) => ({ slug: f.slug }));
+export async function generateStaticParams() {
+  const films = await getFilms();
+  return films.map((film) => ({ slug: film.slug }));
 }
 
 // Day-1 shell: native controls, no metering yet.
 // Day 3 replaces this with the custom player + heartbeat loop + calm gauge.
-export default async function WatchPage({
-  params,
-}: {
-  params: Promise<{ slug: string }>;
-}) {
+export default async function WatchPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const film = getFilm(slug);
+  const film = await getFilmBySlug(slug);
   if (!film) notFound();
 
   return (
