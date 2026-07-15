@@ -7,9 +7,10 @@ import { formatRuntime } from '@/lib/films';
 export default async function FilmPage({
   params,
 }: {
-  params: { slug: string };
+  params: Promise<{ slug: string }>;
 }) {
-  const film = await getFilmBySlug(params.slug);
+  const { slug } = await params;
+  const film = await getFilmBySlug(slug);
   if (!film) notFound();
 
   return (

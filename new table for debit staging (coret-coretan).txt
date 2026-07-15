@@ -1,0 +1,10 @@
+CREATE TABLE IF NOT EXISTS debit_staging (
+  session_id uuid NOT NULL REFERENCES playback_sessions(id),
+  seq        integer NOT NULL,
+  seconds    integer NOT NULL,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  PRIMARY KEY (session_id, seq)
+);
+CREATE INDEX IF NOT EXISTS debit_staging_created_idx ON debit_staging (created_at);
+
+ALTER TABLE playback_sessions ADD COLUMN IF NOT EXISTS audited_at timestamptz;

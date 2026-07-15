@@ -3,6 +3,7 @@ import { and, eq } from "drizzle-orm";
 import { db } from "@/lib/db/client";
 import { films, playbackSessions, users } from "@/lib/db/schema";
 import { getSession } from "@/lib/auth/server";
+import { rollupSession } from "@/lib/db/rollup";
 
 // session.userId is always the canonical ledger users.id (both Particle and
 // password sign-in sign it), so the ledger row is guaranteed to exist here —
@@ -46,17 +47,22 @@ export async function POST(request: Request) {
     );
   }
 
-  // Close any previous active session so the one_active_session_per_user
-  // partial unique index accepts the new row.
-  await db
-    .update(playbackSessions)
-    .set({ active: false, endedAt: new Date() })
+  // Roll up any previous active session (typically one the user never cleanly
+  // ended — a crash or closed laptop) before starting a new one. This both
+  // audits its staging rows and frees the one_active_session_per_user partial
+  // unique index for the new row.
+  const stale = await db
+    .select({ id: playbackSessions.id })
+    .from(playbackSessions)
     .where(
       and(
         eq(playbackSessions.userId, ledgerUser.id),
         eq(playbackSessions.active, true),
       ),
     );
+  for (const s of stale) {
+    await rollupSession(s.id);
+  }
 
   const [created] = await db
     .insert(playbackSessions)

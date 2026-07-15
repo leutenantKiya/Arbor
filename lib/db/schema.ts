@@ -6,6 +6,7 @@ import {
   index,
   integer,
   pgTable,
+  primaryKey,
   text,
   timestamp,
   uniqueIndex,
@@ -101,12 +102,42 @@ export const playbackSessions = pgTable(
     // set when the session is actually closed — distinct from lastBeatAt,
     // which only reflects the last heartbeat received
     endedAt: timestamp("ended_at", { withTimezone: true }),
+    // set when the session's debit_staging rows have been rolled up into one
+    // permanent debit_events audit row. NULL = not yet audited. This is the
+    // idempotency guard: rollup only acts on rows where audited_at IS NULL.
+    auditedAt: timestamp("audited_at", { withTimezone: true }),
   },
   (t) => [
     // single active session per user, enforced by the schema itself
     uniqueIndex("one_active_session_per_user")
       .on(t.userId)
       .where(sql`${t.active} = true`),
+  ],
+);
+
+// Hot staging tier for heartbeats. Every beat appends one row here (cheap,
+// bounded, replay-proof); rows are rolled up into debit_events when the
+// session closes and purged after 7 days. This keeps the permanent audit
+// table (debit_events) growing per-session instead of per-10s-beat.
+export const debitStaging = pgTable(
+  "debit_staging",
+  {
+    sessionId: uuid("session_id")
+      .notNull()
+      .references(() => playbackSessions.id),
+    // monotonic per-session beat number — see playback_sessions.last_seq
+    seq: integer("seq").notNull(),
+    seconds: integer("seconds").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    // (session, seq) is the natural key — a replayed beat collides and is
+    // dropped by ON CONFLICT, so double-billing is impossible by construction
+    primaryKey({ columns: [t.sessionId, t.seq] }),
+    // drives the 7-day TTL purge sweep
+    index("debit_staging_created_idx").on(t.createdAt),
   ],
 );
 

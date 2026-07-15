@@ -2,13 +2,11 @@ import { NextResponse } from "next/server";
 import { sql } from "drizzle-orm";
 import { db } from "@/lib/db/client";
 import { getSession } from "@/lib/auth/server";
+import { rollupSession } from "@/lib/db/rollup";
 
 // Server-clock delta cap: heartbeat interval (10s) + 2s network tolerance
 // (ARCHITECTURE.md §4.1 / §8 "Heartbeat inflation/replay").
 const MAX_DELTA_SECONDS = 12;
-
-// Billing rate: 10 seconds watched = 1 cent total, filmmaker keeps 90%.
-// Expressed inline in the SQL below as ROUND(debited * 0.9 / 10.0).
 
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -37,23 +35,25 @@ export async function POST(request: Request) {
   }
 
   // One atomic statement — chained data-modifying CTEs run as a single
-  // implicit transaction, which is the only transaction shape the neon-http
-  // driver supports. FOR UPDATE locks the session + ledger rows first, so a
-  // concurrent duplicate beat blocks, re-evaluates seq > last_seq against
-  // the committed row, and matches zero rows instead of double-billing.
+  // implicit transaction, the only transaction shape the neon-http driver
+  // supports. FOR UPDATE locks the session + ledger rows first, so a
+  // concurrent duplicate beat blocks, re-evaluates seq > last_seq against the
+  // committed row, and matches zero rows instead of double-billing.
   //
-  // target  → validate owner / active / monotonic seq, lock rows, read
-  //           raw delta from the server clock (never the client's claim)
-  // calc    → cap the debit at both MAX_DELTA and the remaining balance
-  // beat    → advance last_seq/last_beat_at; auto-end the session in the
-  //           same UPDATE when the balance hits 0 (a row must not be
-  //           updated twice by different CTEs of one statement)
-  // debit   → decrement users.balance_seconds
-  // event   → append-only debit_events audit row
-  // accrue  → filmmaker's 90% share onto filmmakers.pending_cents
+  // The beat writes only to the HOT tier now — one debit_staging row + the
+  // live balance decrement. No per-beat debit_events/filmmaker write; that is
+  // deferred to rollupSession() at session close (per-session audit row).
+  //
+  // target → validate owner / active / monotonic seq, lock rows, read raw
+  //          delta from the server clock (never the client's claim)
+  // calc   → cap the debit at both MAX_DELTA and the remaining balance
+  // stage  → append the beat to debit_staging; ON CONFLICT (session, seq)
+  //          DO NOTHING makes a raced duplicate a no-op (replay-proof)
+  // beat   → advance last_seq/last_beat_at; auto-end when balance hits 0
+  // debit  → decrement users.balance_seconds (live, as before)
   const result = await db.execute(sql`
     WITH target AS (
-      SELECT ps.id AS session_id, ps.user_id, ps.film_id,
+      SELECT ps.id AS session_id, ps.user_id,
              u.balance_seconds,
              LEAST(${MAX_DELTA_SECONDS}, GREATEST(0,
                EXTRACT(EPOCH FROM (now() - COALESCE(ps.last_beat_at, ps.started_at)))::int
@@ -68,9 +68,16 @@ export async function POST(request: Request) {
     ),
     calc AS (
       SELECT t.*,
-             LEAST(t.raw_delta, t.balance_seconds) AS debited,
-             ROUND(LEAST(t.raw_delta, t.balance_seconds) * 0.9 / 10.0)::int AS filmmaker_cents
+             LEAST(t.raw_delta, t.balance_seconds) AS debited
       FROM target t
+    ),
+    stage AS (
+      INSERT INTO debit_staging (session_id, seq, seconds)
+      SELECT c.session_id, ${seq}, c.debited
+      FROM calc c
+      WHERE c.debited > 0
+      ON CONFLICT (session_id, seq) DO NOTHING
+      RETURNING session_id
     ),
     beat AS (
       UPDATE playback_sessions ps
@@ -88,21 +95,6 @@ export async function POST(request: Request) {
       FROM calc c
       WHERE u.id = c.user_id
       RETURNING u.balance_seconds
-    ),
-    event AS (
-      INSERT INTO debit_events (session_id, seconds, filmmaker_cents)
-      SELECT c.session_id, c.debited, c.filmmaker_cents
-      FROM calc c
-      WHERE c.debited > 0
-      RETURNING id
-    ),
-    accrue AS (
-      UPDATE filmmakers f
-      SET pending_cents = f.pending_cents + c.filmmaker_cents
-      FROM calc c
-      JOIN films fl ON fl.id = c.film_id
-      WHERE f.id = fl.filmmaker_id AND c.filmmaker_cents > 0
-      RETURNING f.id
     )
     SELECT c.debited AS debited_seconds,
            c.balance_seconds - c.debited AS remaining_seconds,
@@ -123,6 +115,14 @@ export async function POST(request: Request) {
   // this loop and start a fresh session if the user is still watching.
   if (!row) {
     return NextResponse.json({ error: "rejected" }, { status: 409 });
+  }
+
+  // Balance hit 0 this beat — the session is already flipped inactive above.
+  // Roll its staging rows up into the permanent audit row now. A separate
+  // statement (not atomic with the beat), but crash-safe: if this never runs,
+  // audited_at stays NULL and the sweep finishes the rollup later.
+  if (row.session_ended) {
+    await rollupSession(sessionId);
   }
 
   return NextResponse.json({
