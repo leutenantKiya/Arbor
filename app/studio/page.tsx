@@ -36,11 +36,15 @@ async function getFilmmakerStats() {
   const rows = await db
     .select({
       name: filmmakers.name,
-      pendingCents: filmmakers.pendingCents,
+      pendingCents: sql<number>`COALESCE(SUM(${filmmakers.pendingCents}), 0)`,
     })
     .from(filmmakers)
+    .groupBy(filmmakers.name)
     .orderBy(filmmakers.name);
-  return rows;
+  return rows.map((r) => ({
+    name: r.name,
+    pendingCents: Number(r.pendingCents),
+  }));
 }
 
 function formatCents(cents: number): string {
