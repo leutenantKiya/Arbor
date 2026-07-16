@@ -2,10 +2,13 @@ import Link from "next/link";
 import { AuthButton } from "./auth-button";
 import { BalancePill } from "./balance-pill";
 import { Logo } from "./logo";
+import { WalletInfo } from "./wallet-info";
 import { getSession } from "@/lib/auth/server";
 import { db } from "@/lib/db/client";
 import { users } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
+import { getUsdcBalance } from "@/lib/blockchain/usdc";
+import { formatUsdcAmount } from "@/lib/blockchain/utils";
 
 async function getUserBalance(userId: string): Promise<number | null> {
   try {
@@ -23,6 +26,16 @@ async function getUserBalance(userId: string): Promise<number | null> {
 export async function Nav() {
   const session = await getSession();
   const balance = session ? await getUserBalance(session.userId) : null;
+
+  let usdcBalance: string | null = null;
+  if (session?.walletAddress && session.walletAddress !== "0x0000000000000000000000000000000000000000") {
+    try {
+      const bal = await getUsdcBalance(session.walletAddress as `0x${string}`);
+      usdcBalance = formatUsdcAmount(bal);
+    } catch {
+      // ignore RPC failures in SSR
+    }
+  }
 
   return (
     <header className="fixed inset-x-0 top-0 z-50 border-b border-line/60 bg-bark/80 backdrop-blur-md">
@@ -49,15 +62,13 @@ export async function Nav() {
         <div className="ml-auto flex items-center gap-4">
           {session ? (
             <>
-              {/* Live balance pill — server renders the ledger value, then the
-                  client component follows heartbeat signals from the player
-                  (PLANNING.md §9) */}
-              <BalancePill initialSeconds={balance} />
-              {(session.name || session.email) && (
-                <span className="hidden text-sm text-sage sm:inline">
-                  {session.name || session.email}
-                </span>
+              {/* Wallet Info (USDC + Address with Copy) */}
+              {session.walletAddress && session.walletAddress !== "0x0000000000000000000000000000000000000000" && (
+                <WalletInfo address={session.walletAddress} usdcBalance={usdcBalance} />
               )}
+
+              {/* Live viewing time balance pill */}
+              <BalancePill initialSeconds={balance} />
             </>
           ) : (
             <Link
@@ -68,9 +79,7 @@ export async function Nav() {
               Add time
             </Link>
           )}
-          {/* Sign in / sign out — Particle connectkit, both states.
-              hasSession from the server: the httpOnly cookie is invisible
-              to client JS, so the button can't detect it itself. */}
+          {/* Sign in / sign out — Particle connectkit, both states */}
           <AuthButton hasSession={!!session} />
         </div>
       </div>

@@ -172,6 +172,11 @@ export const purchases = pgTable("purchases", {
   packageId: text("package_id").notNull(),
   seconds: integer("seconds").notNull(),
   cents: integer("cents").notNull(),
+  // pending → confirmed → failed; tracks on-chain deposit status
+  status: text("status").notNull().default("pending"),
+  // set when the on-chain deposit is confirmed
+  blockNumber: integer("block_number"),
+  confirmedAt: timestamp("confirmed_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .defaultNow(),
@@ -214,4 +219,8 @@ export const settlementItems = pgTable("settlement_items", {
     .notNull()
     .references(() => filmmakers.id),
   cents: integer("cents").notNull(),
+  // filmmaker's wallet address at time of settlement snapshot
+  walletAddress: text("wallet_address").notNull().default(""),
+  // pending → paid; updated when CreatorPaid event is confirmed
+  status: text("status").notNull().default("pending"),
 });

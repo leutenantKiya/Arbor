@@ -1,13 +1,14 @@
 import { AuthButton } from '@/components/auth-button';
+import { PurchaseButton } from '@/components/purchase-button';
 import { getSession } from '@/lib/auth/server';
 import { db } from '@/lib/db/client';
 import { users } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
 
 const packages = [
-  { id: "sprout", hours: 2.5, seconds: 9000, price: "$2.49", note: "A film night" },
-  { id: "sapling", hours: 5, seconds: 18000, price: "$4.49", note: "Most popular", popular: true },
-  { id: "grove", hours: 10, seconds: 36000, price: "$7.99", note: "A festival at home" },
+  { id: "sprout", hours: 2.5, seconds: 9000, cents: 249, price: "$2.49", note: "A film night" },
+  { id: "sapling", hours: 5, seconds: 18000, cents: 449, price: "$4.49", note: "Most popular", popular: true },
+  { id: "grove", hours: 10, seconds: 36000, cents: 799, price: "$7.99", note: "A festival at home" },
 ];
 
 function formatBalance(seconds: number): string {
@@ -93,14 +94,12 @@ export default async function TimePage() {
             <p className="mt-1 text-sage">{p.note}</p>
             <p className="mt-4 text-2xl text-amber-soft">{p.price}</p>
             {session ? (
-              <button
-                type="button"
-                disabled
-                className="mt-6 w-full cursor-not-allowed rounded-full bg-amber/10 py-2.5 text-sm text-amber-soft"
-                title="On-chain purchase coming in the next update (Particle gasless → ArborVault)"
-              >
-                Purchase coming soon
-              </button>
+              <PurchaseButton
+                packageId={p.id}
+                price={p.price}
+                cents={p.cents}
+                seconds={p.seconds}
+              />
             ) : (
               <p className="mt-6 w-full rounded-full bg-cream/10 py-2.5 text-center text-sm text-sage">
                 Sign in above to add time
@@ -111,8 +110,8 @@ export default async function TimePage() {
       </div>
 
       <p className="mt-8 text-xs text-sage/60">
-        On-chain purchases (Particle Network gasless → ArborVault) are coming soon.
-        Time packages shown are for illustration.
+        Purchases are gasless on Arbitrum via Particle Network. USDC is
+        deposited to the ArborVault contract — filmmakers are settled daily.
       </p>
     </div>
   );
