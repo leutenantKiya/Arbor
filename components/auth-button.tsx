@@ -77,29 +77,30 @@ export function AuthButton({ hasSession }: { hasSession: boolean }) {
         return;
       }
 
-      // ── Wait for window.particle._internal ────────────────────────
-      // After OAuth redirect auth-core can take a few seconds to init.
-      let internal: ParticleInternal | null = null;
-      for (let attempt = 0; attempt < 40 && !internal; attempt++) {
-        internal = particleInternal();
-        if (!internal) await new Promise((r) => setTimeout(r, 500));
-      }
-
-      if (!internal) {
-        setNotice("Still connecting — give it a moment and click Sign in.");
-        return;
-      }
-
-      // ── Get user info ─────────────────────────────────────────────
+      // ── Wait for window.particle._internal AND a non-null userInfo ─
+      // Two distinct races share this loop:
+      //  - OAuth redirect: auth-core takes a few seconds to init, so
+      //    _internal itself appears late.
+      //  - Email OTP (no redirect): _internal already exists, but
+      //    `isConnected` flips a beat BEFORE auth-core writes userInfo,
+      //    so an immediate getUserInfo() returns null on a healthy
+      //    session. Polling only for _internal's existence made every
+      //    email login look "expired" — userInfo must be polled too.
       let info: { uuid: string; token: string } | null = null;
-      try {
-        info = internal.getUserInfo?.() ?? null;
-      } catch (err) {
-        console.error("[AuthButton] getUserInfo threw:", err);
+      for (let attempt = 0; attempt < 40 && !info; attempt++) {
+        const internal = particleInternal();
+        if (internal) {
+          try {
+            info = internal.getUserInfo?.() ?? null;
+          } catch {
+            // auth-core still initializing — keep polling
+          }
+        }
+        if (!info) await new Promise((r) => setTimeout(r, 500));
       }
 
       if (!info) {
-        // auth-core initialized but no user → session genuinely dead.
+        // 20s with a connected wallet but no user info → genuinely dead.
         await disconnectAsync();
         setNotice("Session expired — click Sign in to log in again.");
         return;
