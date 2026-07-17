@@ -9,7 +9,6 @@ import { VideoPlayer } from '@/components/video-player';
 export default async function WatchPage({ params }: { params: Promise<{ slug: string }> }) {
   const session = await getSession();
   if (!session) redirect('/auth/sign-in');
-
   const { slug } = await params;
   const film = await getFilmBySlug(slug);
   if (!film) notFound();
