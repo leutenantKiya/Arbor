@@ -8,7 +8,7 @@ import {
   coinbaseWallet,
   injected,
 } from "@particle-network/connectkit/evm";
-import { arbitrum, sepolia } from "@particle-network/connectkit/chains";
+import { arbitrum, baseSepolia } from "@particle-network/connectkit/chains";
 import { wallet, type EntryPosition } from "@particle-network/connectkit/wallet";
 import { aa } from "@particle-network/connectkit/aa";
 import { particleConfig } from "@/lib/particle/config";
@@ -66,11 +66,13 @@ const config = createConfig({
     }),
   ],
 
-  // Ethereum Sepolia first (demo); mainnet Arbitrum = production + UA capability.
-  // Moved off Arbitrum Sepolia — "Chain disabled: 421614" traced to a
-  // per-project chain gate on Particle's backend (not a code/SDK issue,
-  // confirmed via scratch/test-particle-aa.ts). Ethereum Sepolia isn't gated.
-  chains: [sepolia, arbitrum],
+  // Base Sepolia first (demo); mainnet Arbitrum = production + UA capability.
+  // Chain history (all verified via scratch/test-aa-chains.ts, 2026-07-18):
+  //   Arbitrum Sepolia — Particle AA rejects: "Chain disabled: 421614" (-32001)
+  //   Ethereum Sepolia — Particle paymaster broken: "AA33 Invalid tx origin"
+  //     (fails even on a plain 0-value transfer, every account type)
+  //   Base Sepolia — gasless healthy ✓ (approve on our contracts sponsored)
+  chains: [baseSepolia, arbitrum],
 });
 
 export function ParticleProvider({ children }: { children: React.ReactNode }) {

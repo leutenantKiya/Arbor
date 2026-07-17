@@ -5,7 +5,7 @@ import { useAccount, usePublicClient, useSmartAccount, useSwitchChain } from "@p
 import { erc20Abi } from "@/lib/blockchain/abi/erc20";
 import { arborVaultAbi } from "@/lib/blockchain/abi/arborVault";
 import { type Hex, createWalletClient, custom } from "viem";
-import { sepolia } from "viem/chains";
+import { baseSepolia } from "viem/chains";
 import { AAWrapProvider, SendTransactionMode } from "@particle-network/aa";
 
 // ── Contract addresses from env ───────────────────────────────────────
@@ -69,10 +69,10 @@ export function PurchaseButton({
     try {
       // Guard the chain: if the connected chain !== 11155111, switch to Ethereum Sepolia
       const currentChainId = Number(chainId);
-      if (currentChainId !== sepolia.id) {
+      if (currentChainId !== baseSepolia.id) {
         try {
           setStep("switching-chain");
-          await switchChainAsync({ chainId: sepolia.id });
+          await switchChainAsync({ chainId: baseSepolia.id });
         } catch (switchError) {
           console.error("Failed to switch chain:", switchError);
           setError("Failed to switch network. Please switch to Ethereum Sepolia in your wallet.");
@@ -88,7 +88,7 @@ export function PurchaseButton({
       const provider = new AAWrapProvider(smartAccount, SendTransactionMode.Gasless);
       const walletClient = createWalletClient({
         account: smartAccountAddress,
-        chain: sepolia,
+        chain: baseSepolia,
         transport: custom(provider),
       });
 
@@ -115,7 +115,7 @@ export function PurchaseButton({
           abi: erc20Abi,
           functionName: "approve",
           args: [ARBORVAULT_ADDRESS, amount],
-          chain: sepolia,
+          chain: baseSepolia,
           account: smartAccountAddress,
         });
 
@@ -133,7 +133,7 @@ export function PurchaseButton({
         abi: arborVaultAbi,
         functionName: "deposit",
         args: [amount, orderIdBytes32],
-        chain: sepolia,
+        chain: baseSepolia,
         account: smartAccountAddress,
       });
 

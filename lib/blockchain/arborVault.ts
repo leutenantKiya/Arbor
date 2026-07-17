@@ -4,7 +4,7 @@
 // releaseBatch uses the settlement wallet client (server-only, onlyOwner).
 
 import { arborVaultAbi } from "./abi/arborVault";
-import { getPublicClient, getWalletClient, sepolia } from "./client";
+import { getPublicClient, getWalletClient, baseSepolia } from "./client";
 import {
   ARBORVAULT_ADDRESS,
   settlementIdToBytes32,
@@ -64,7 +64,7 @@ export async function releaseBatch(
     abi: arborVaultAbi,
     functionName: "releaseBatch",
     args: [settlementBytes32, onChainItems],
-    chain: sepolia,
+    chain: baseSepolia,
     account: walletClient.account!,
   });
 
