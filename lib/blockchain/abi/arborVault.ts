@@ -1,95 +1,202 @@
-// ArborVault contract ABI — deployed on Arbitrum Sepolia at
-// 0xde517DED369a3Af43bbb4F677e33Fd26b37C1833
+// ArborVault (contract name: ArborSettlement) ABI. Deployed on Ethereum
+// Sepolia (11155111) at NEXT_PUBLIC_ARBORVAULT_ADDRESS. USDC is a fixed
+// `constant` baked in at compile time (no constructor arg) — verified
+// on-chain to point at NEXT_PUBLIC_USDC_ADDRESS's MockUSDC.
 //
-// Functions: deposit (user purchase), releaseBatch (settlement)
-// Events: PaymentReceived, CreatorPaid, BatchReleased
+// Functions: deposit (user purchase), releaseBatch (settlement),
+// emergencyWithdraw, pause/unpause (owner-only)
+// Events: PaymentReceived, CreatorPaid, BatchReleased, EmergencyWithdraw,
+// Paused, Unpaused, OwnershipTransferred
 
 export const arborVaultAbi = [
-  // ── Read functions ──────────────────────────────────────────────────
+  { inputs: [], stateMutability: "nonpayable", type: "constructor" },
+
+  // ── Errors ──────────────────────────────────────────────────────────
+  { inputs: [], name: "EnforcedPause", type: "error" },
+  { inputs: [], name: "ExpectedPause", type: "error" },
   {
-    type: "function",
-    name: "owner",
-    inputs: [],
-    outputs: [{ name: "", type: "address" }],
-    stateMutability: "view",
+    inputs: [{ internalType: "address", name: "owner", type: "address" }],
+    name: "OwnableInvalidOwner",
+    type: "error",
   },
   {
-    type: "function",
-    name: "usdcToken",
-    inputs: [],
-    outputs: [{ name: "", type: "address" }],
-    stateMutability: "view",
+    inputs: [{ internalType: "address", name: "account", type: "address" }],
+    name: "OwnableUnauthorizedAccount",
+    type: "error",
   },
-  {
-    type: "function",
-    name: "getBalance",
-    inputs: [],
-    outputs: [{ name: "", type: "uint256" }],
-    stateMutability: "view",
-  },
-  {
-    type: "function",
-    name: "orderFulfilled",
-    inputs: [{ name: "orderId", type: "bytes32" }],
-    outputs: [{ name: "", type: "bool" }],
-    stateMutability: "view",
-  },
+  { inputs: [], name: "ReentrancyGuardReentrantCall", type: "error" },
 
   // ── Write functions ─────────────────────────────────────────────────
   {
-    type: "function",
-    name: "deposit",
     inputs: [
-      { name: "amount", type: "uint256" },
-      { name: "orderId", type: "bytes32" },
+      { internalType: "uint256", name: "amount", type: "uint256" },
+      { internalType: "bytes32", name: "orderId", type: "bytes32" },
     ],
+    name: "deposit",
     outputs: [],
     stateMutability: "nonpayable",
+    type: "function",
   },
   {
-    type: "function",
-    name: "releaseBatch",
     inputs: [
-      { name: "settlementId", type: "bytes32" },
+      { internalType: "address", name: "to", type: "address" },
+      { internalType: "uint256", name: "amount", type: "uint256" },
+    ],
+    name: "emergencyWithdraw",
+    outputs: [],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+  {
+    inputs: [],
+    name: "pause",
+    outputs: [],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+  {
+    inputs: [
+      { internalType: "bytes32", name: "settlementId", type: "bytes32" },
       {
+        internalType: "struct ArborSettlement.ReleaseItem[]",
         name: "items",
         type: "tuple[]",
         components: [
-          { name: "wallet", type: "address" },
-          { name: "amount", type: "uint256" },
+          { internalType: "address", name: "wallet", type: "address" },
+          { internalType: "uint256", name: "amount", type: "uint256" },
         ],
       },
     ],
+    name: "releaseBatch",
     outputs: [],
     stateMutability: "nonpayable",
+    type: "function",
+  },
+  {
+    inputs: [],
+    name: "renounceOwnership",
+    outputs: [],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+  {
+    inputs: [{ internalType: "address", name: "newOwner", type: "address" }],
+    name: "transferOwnership",
+    outputs: [],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+  {
+    inputs: [],
+    name: "unpause",
+    outputs: [],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+
+  // ── Read functions ──────────────────────────────────────────────────
+  {
+    inputs: [],
+    name: "contractBalance",
+    outputs: [{ internalType: "uint256", name: "", type: "uint256" }],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [],
+    name: "owner",
+    outputs: [{ internalType: "address", name: "", type: "address" }],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [],
+    name: "paused",
+    outputs: [{ internalType: "bool", name: "", type: "bool" }],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [],
+    name: "totalDeposited",
+    outputs: [{ internalType: "uint256", name: "", type: "uint256" }],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [],
+    name: "totalReleased",
+    outputs: [{ internalType: "uint256", name: "", type: "uint256" }],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [],
+    name: "USDC",
+    outputs: [{ internalType: "contract IERC20", name: "", type: "address" }],
+    stateMutability: "view",
+    type: "function",
   },
 
   // ── Events ──────────────────────────────────────────────────────────
   {
-    type: "event",
-    name: "PaymentReceived",
+    anonymous: false,
     inputs: [
-      { name: "payer", type: "address", indexed: true },
-      { name: "amount", type: "uint256", indexed: false },
-      { name: "orderId", type: "bytes32", indexed: true },
+      { indexed: true, internalType: "bytes32", name: "settlementId", type: "bytes32" },
+      { indexed: false, internalType: "uint256", name: "totalAmount", type: "uint256" },
+      { indexed: false, internalType: "uint256", name: "totalRecipients", type: "uint256" },
     ],
-  },
-  {
-    type: "event",
-    name: "CreatorPaid",
-    inputs: [
-      { name: "settlementId", type: "bytes32", indexed: true },
-      { name: "creator", type: "address", indexed: true },
-      { name: "amount", type: "uint256", indexed: false },
-    ],
-  },
-  {
-    type: "event",
     name: "BatchReleased",
+    type: "event",
+  },
+  {
+    anonymous: false,
     inputs: [
-      { name: "settlementId", type: "bytes32", indexed: true },
-      { name: "totalAmount", type: "uint256", indexed: false },
-      { name: "totalRecipients", type: "uint256", indexed: false },
+      { indexed: true, internalType: "bytes32", name: "settlementId", type: "bytes32" },
+      { indexed: true, internalType: "address", name: "creator", type: "address" },
+      { indexed: false, internalType: "uint256", name: "amount", type: "uint256" },
     ],
+    name: "CreatorPaid",
+    type: "event",
+  },
+  {
+    anonymous: false,
+    inputs: [
+      { indexed: true, internalType: "address", name: "to", type: "address" },
+      { indexed: false, internalType: "uint256", name: "amount", type: "uint256" },
+    ],
+    name: "EmergencyWithdraw",
+    type: "event",
+  },
+  {
+    anonymous: false,
+    inputs: [
+      { indexed: true, internalType: "address", name: "previousOwner", type: "address" },
+      { indexed: true, internalType: "address", name: "newOwner", type: "address" },
+    ],
+    name: "OwnershipTransferred",
+    type: "event",
+  },
+  {
+    anonymous: false,
+    inputs: [{ indexed: false, internalType: "address", name: "account", type: "address" }],
+    name: "Paused",
+    type: "event",
+  },
+  {
+    anonymous: false,
+    inputs: [
+      { indexed: true, internalType: "address", name: "payer", type: "address" },
+      { indexed: false, internalType: "uint256", name: "amount", type: "uint256" },
+      { indexed: true, internalType: "bytes32", name: "orderId", type: "bytes32" },
+    ],
+    name: "PaymentReceived",
+    type: "event",
+  },
+  {
+    anonymous: false,
+    inputs: [{ indexed: false, internalType: "address", name: "account", type: "address" }],
+    name: "Unpaused",
+    type: "event",
   },
 ] as const;

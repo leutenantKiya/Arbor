@@ -1,4 +1,4 @@
-// viem clients for Arbitrum Sepolia.
+// viem clients for Ethereum Sepolia.
 //
 // Public client: reading contract state, watching events, confirming txs.
 //   Used by both server and client code.
@@ -13,7 +13,7 @@ import {
   type PublicClient,
   type WalletClient,
 } from "viem";
-import { arbitrumSepolia } from "viem/chains";
+import { sepolia } from "viem/chains";
 import { privateKeyToAccount } from "viem/accounts";
 
 // ── Public client (singleton) ─────────────────────────────────────────
@@ -23,7 +23,7 @@ let _publicClient: PublicClient | null = null;
 export function getPublicClient(): PublicClient {
   if (!_publicClient) {
     _publicClient = createPublicClient({
-      chain: arbitrumSepolia,
+      chain: sepolia,
       transport: http(),
     });
   }
@@ -51,7 +51,7 @@ export function getWalletClient(): WalletClient {
     const account = privateKeyToAccount(key as `0x${string}`);
     _walletClient = createWalletClient({
       account,
-      chain: arbitrumSepolia,
+      chain: sepolia,
       transport: http(),
     });
   }
@@ -59,4 +59,4 @@ export function getWalletClient(): WalletClient {
 }
 
 // Re-export the chain for convenience
-export { arbitrumSepolia };
+export { sepolia };

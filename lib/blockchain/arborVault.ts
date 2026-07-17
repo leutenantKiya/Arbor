@@ -4,7 +4,7 @@
 // releaseBatch uses the settlement wallet client (server-only, onlyOwner).
 
 import { arborVaultAbi } from "./abi/arborVault";
-import { getPublicClient, getWalletClient, arbitrumSepolia } from "./client";
+import { getPublicClient, getWalletClient, sepolia } from "./client";
 import {
   ARBORVAULT_ADDRESS,
   settlementIdToBytes32,
@@ -22,20 +22,7 @@ export async function getVaultBalance(): Promise<bigint> {
   return client.readContract({
     address: ARBORVAULT_ADDRESS,
     abi: arborVaultAbi,
-    functionName: "getBalance",
-  });
-}
-
-/**
- * Check if an order has already been fulfilled on-chain.
- */
-export async function isOrderFulfilled(orderId: Hex): Promise<boolean> {
-  const client = getPublicClient();
-  return client.readContract({
-    address: ARBORVAULT_ADDRESS,
-    abi: arborVaultAbi,
-    functionName: "orderFulfilled",
-    args: [orderId],
+    functionName: "contractBalance",
   });
 }
 
@@ -77,7 +64,7 @@ export async function releaseBatch(
     abi: arborVaultAbi,
     functionName: "releaseBatch",
     args: [settlementBytes32, onChainItems],
-    chain: arbitrumSepolia,
+    chain: sepolia,
     account: walletClient.account!,
   });
 

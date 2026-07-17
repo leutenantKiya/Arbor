@@ -1,18 +1,19 @@
 "use client";
 
 import { useState } from "react";
-import { useAccount, usePublicClient } from "@particle-network/connectkit";
+import { useAccount, usePublicClient, useSmartAccount, useSwitchChain } from "@particle-network/connectkit";
 import { erc20Abi } from "@/lib/blockchain/abi/erc20";
 import { arborVaultAbi } from "@/lib/blockchain/abi/arborVault";
 import { type Hex, createWalletClient, custom } from "viem";
-import { arbitrumSepolia } from "viem/chains";
+import { sepolia } from "viem/chains";
+import { AAWrapProvider, SendTransactionMode } from "@particle-network/aa";
 
 // ── Contract addresses from env ───────────────────────────────────────
 
 const ARBORVAULT_ADDRESS = (process.env.NEXT_PUBLIC_ARBORVAULT_ADDRESS ??
   "") as `0x${string}`;
 const USDC_ADDRESS = (process.env.NEXT_PUBLIC_USDC_ADDRESS ??
-  "") as `0x${string}`;
+  "") as `0x${string}`; // Mock USDC token for this hackathon/project workspace, on Ethereum Sepolia. Official Circle USDC on Ethereum Sepolia is 0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238.
 
 // ── USDC 6-decimal helpers ────────────────────────────────────────────
 
@@ -31,7 +32,7 @@ function uuidToBytes32(uuid: string): Hex {
 
 // ── Types ─────────────────────────────────────────────────────────────
 
-type PurchaseStep = "idle" | "approving" | "depositing" | "confirming" | "done" | "error";
+type PurchaseStep = "idle" | "switching-chain" | "approving" | "depositing" | "confirming" | "done" | "error";
 
 type PurchaseButtonProps = {
   packageId: string;
@@ -48,14 +49,16 @@ export function PurchaseButton({
   seconds,
   disabled = false,
 }: PurchaseButtonProps) {
-  const { address, isConnected, connector } = useAccount();
+  const { address, isConnected, chainId } = useAccount();
   const publicClient = usePublicClient();
+  const smartAccount = useSmartAccount();
+  const { switchChainAsync } = useSwitchChain();
 
   const [step, setStep] = useState<PurchaseStep>("idle");
   const [error, setError] = useState<string | null>(null);
 
   async function handlePurchase() {
-    if (!isConnected || !address || !connector || !publicClient) {
+    if (!isConnected || !address || !smartAccount || !publicClient) {
       setError("Please sign in first");
       return;
     }
@@ -64,15 +67,29 @@ export function PurchaseButton({
     setError(null);
 
     try {
-      const amount = centsToUsdcAmount(cents);
-      const userAddress = address as `0x${string}`;
+      // Guard the chain: if the connected chain !== 11155111, switch to Ethereum Sepolia
+      const currentChainId = Number(chainId);
+      if (currentChainId !== sepolia.id) {
+        try {
+          setStep("switching-chain");
+          await switchChainAsync({ chainId: sepolia.id });
+        } catch (switchError) {
+          console.error("Failed to switch chain:", switchError);
+          setError("Failed to switch network. Please switch to Ethereum Sepolia in your wallet.");
+          setStep("idle");
+          return;
+        }
+      }
 
-      // Get the EIP-1193 provider from Particle Network connector
-      const provider = await connector.getProvider();
+      const amount = centsToUsdcAmount(cents);
+      const smartAccountAddress = (await smartAccount.getAddress()) as `0x${string}`;
+
+      // Wrap the smart account inside the AAWrapProvider configured for gasless mode
+      const provider = new AAWrapProvider(smartAccount, SendTransactionMode.Gasless);
       const walletClient = createWalletClient({
-        account: userAddress,
-        chain: arbitrumSepolia,
-        transport: custom(provider as any),
+        account: smartAccountAddress,
+        chain: sepolia,
+        transport: custom(provider),
       });
 
       // ── Step 1: Generate a purchase order ID ────────────────────────
@@ -86,7 +103,7 @@ export function PurchaseButton({
         address: USDC_ADDRESS,
         abi: erc20Abi,
         functionName: "allowance",
-        args: [userAddress, ARBORVAULT_ADDRESS],
+        args: [smartAccountAddress, ARBORVAULT_ADDRESS],
       });
 
       // ── Step 3: Approve USDC if needed ──────────────────────────────
@@ -98,8 +115,8 @@ export function PurchaseButton({
           abi: erc20Abi,
           functionName: "approve",
           args: [ARBORVAULT_ADDRESS, amount],
-          chain: arbitrumSepolia,
-          account: userAddress,
+          chain: sepolia,
+          account: smartAccountAddress,
         });
 
         await publicClient.waitForTransactionReceipt({
@@ -116,8 +133,8 @@ export function PurchaseButton({
         abi: arborVaultAbi,
         functionName: "deposit",
         args: [amount, orderIdBytes32],
-        chain: arbitrumSepolia,
-        account: userAddress,
+        chain: sepolia,
+        account: smartAccountAddress,
       });
 
       await publicClient.waitForTransactionReceipt({
@@ -167,6 +184,7 @@ export function PurchaseButton({
   // ── Button label by step ────────────────────────────────────────────
   const labels: Record<PurchaseStep, string> = {
     idle: `Buy — ${price}`,
+    "switching-chain": "Switching Network…",
     approving: "Approving USDC…",
     depositing: "Depositing…",
     confirming: "Confirming…",
@@ -174,7 +192,7 @@ export function PurchaseButton({
     error: `Buy — ${price}`,
   };
 
-  const isBusy = step === "approving" || step === "depositing" || step === "confirming";
+  const isBusy = step === "switching-chain" || step === "approving" || step === "depositing" || step === "confirming";
   const isDone = step === "done";
 
   return (

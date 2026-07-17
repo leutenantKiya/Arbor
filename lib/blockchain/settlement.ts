@@ -6,7 +6,6 @@
 export {
   releaseBatch,
   getVaultBalance,
-  isOrderFulfilled,
   type ReleaseItem,
 } from "./arborVault";
 
