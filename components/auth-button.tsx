@@ -5,6 +5,7 @@ import {
   useAccount,
   useDisconnect,
   useModal,
+  useSmartAccount,
 } from "@particle-network/connectkit";
 
 // ---------------------------------------------------------------------------
@@ -49,6 +50,7 @@ export function AuthButton({ hasSession }: { hasSession: boolean }) {
   const { disconnectAsync } = useDisconnect();
   const { isConnected, address, connector } = useAccount();
   const { setOpen } = useModal();
+  const smartAccount = useSmartAccount();
 
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
@@ -67,6 +69,11 @@ export function AuthButton({ hasSession }: { hasSession: boolean }) {
     setBusy(true);
 
     try {
+      // Resolve the Smart Account address so we record it in the DB instead of the EOA address
+      let verifiedAddress = currentAddress;
+      if (smartAccount) {
+        verifiedAddress = await smartAccount.getAddress();
+      }
       // ── External wallet? ──────────────────────────────────────────
       const connectorType = (
         connector as unknown as { walletConnectorType?: string }
@@ -113,7 +120,7 @@ export function AuthButton({ hasSession }: { hasSession: boolean }) {
         body: JSON.stringify({
           uuid: info.uuid,
           token: info.token,
-          walletAddress: currentAddress,
+          walletAddress: verifiedAddress,
         }),
       });
       if (!res.ok) {
