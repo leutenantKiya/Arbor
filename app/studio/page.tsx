@@ -77,7 +77,7 @@ export default async function StudioPage() {
         Earnings
       </h1>
       <p className="mt-2 text-sage">
-        You earn 90% of every second watched, settled on-chain. Not next
+        Filmmakers earn 90% of every second watched, settled on-chain. Not next
         quarter — tonight.
       </p>
 

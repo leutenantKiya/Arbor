@@ -68,19 +68,20 @@ export function FilmSearch({ films }: { films: Film[] }) {
       </button>
 
       {isOpen && (
-        <div className="fixed inset-0 z-[70] flex items-start justify-center px-4 pt-[12vh] sm:px-6" role="presentation">
-          <button
-            type="button"
-            onClick={close}
-            aria-label="Close search"
-            className="absolute inset-0 bg-bark/75 backdrop-blur-md"
-          />
+        <div
+          className="fixed inset-0 z-[70] flex items-start justify-center bg-bark/75 px-4 pt-[12vh] backdrop-blur-md sm:px-6"
+          role="presentation"
+          onPointerDown={(event) => {
+            if (event.target === event.currentTarget) close();
+          }}
+        >
 
           <section
             role="dialog"
             aria-modal="true"
             aria-labelledby="film-search-title"
             className="relative z-10 flex max-h-[76vh] w-full max-w-3xl flex-col overflow-hidden rounded-2xl border border-line bg-[#090a0d]/95 shadow-2xl shadow-black/60"
+            onPointerDown={(event) => event.stopPropagation()}
           >
             <h2 id="film-search-title" className="sr-only">Search the film catalog</h2>
             <div className="flex items-center border-b border-line px-5">

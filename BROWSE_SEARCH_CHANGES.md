@@ -15,6 +15,19 @@ The film search has been redesigned into a focused navigation search experience 
 - Added Clear, click-outside, and Escape-key ways to close or reset search.
 - Kept the main Browse page focused on its existing film rows instead of duplicating a second search interface there.
 
+## Browse Visual Design
+
+The Browse page now uses the supplied streaming landing-page mockup as a visual direction while retaining live catalog data and existing routes:
+
+- Full-height featured-film hero with cinematic overlays, projector-light movement, and film grain.
+- Real featured-film title, synopsis, watch link, detail link, year, and runtime.
+- Catalog-based statistics rather than placeholder streaming claims.
+- Editorial Browse heading and horizontally scrollable poster rows.
+- Poster cards now display film information over the actual poster artwork and still link to the real film detail page.
+- Film rows are interactive, continuously moving carousels. They pause on hover and can be dragged in either direction.
+- The hero avoids bright color effects so the featured film remains the visual focus.
+- Product messaging describes Arbor's pay-only-while-watching model; it does not present a subscription offering.
+
 ## Search Behavior
 
 Search matches the following film information:

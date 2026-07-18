@@ -55,9 +55,11 @@ export async function Nav() {
 
         <NavLinks />
 
-        <FilmSearch films={films} />
+        <div className="ml-auto">
+          <FilmSearch films={films} />
+        </div>
 
-        <div className="ml-auto flex items-center gap-3">
+        <div className="flex items-center gap-3">
           {session ? (
             <>
               {/* Wallet Info (USDC + Address with Copy) */}
