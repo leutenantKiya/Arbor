@@ -49,6 +49,10 @@ export const users = pgTable(
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
+    // Stored as "0" / "1" text (not boolean) — matches the pre-existing
+    // column in the DB. Gates the Studio page: Filmmaker Dashboard vs
+    // Creator Application flow.
+    isFilmmaker: text("is_filmmaker").default("0"),
   },
   (t) => [
     // §8 "Rate abuse": balance can't go negative — enforced in the schema
