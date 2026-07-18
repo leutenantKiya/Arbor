@@ -1,14 +1,8 @@
 import Image from 'next/image';
 import Link from 'next/link';
-import { PosterCard } from '@/components/poster-card';
+import { BrowseCatalog } from '@/components/browse-catalog';
 import { formatRuntime } from '@/lib/films';
 import { getFilms } from '@/lib/db/queries';
-
-const rows: { title: string; filter: (category: string) => boolean }[] = [
-  { title: 'Featured', filter: () => true },
-  { title: 'Animation', filter: (c) => c === 'Animation' },
-  { title: 'Beyond the Festival', filter: (c) => c !== 'Animation' },
-];
 
 export default async function HomePage() {
   const films = await getFilms();
@@ -72,32 +66,7 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* Rows */}
-      <div className="mx-auto max-w-7xl space-y-10 px-6 pt-10">
-        {films.length === 0 ? (
-          <div className="rounded-xl border border-line/60 bg-surface p-8 text-center text-cream">
-            <p className="text-xl font-semibold">No films found in the database.</p>
-            <p className="mt-2 text-sm text-sage">Run `npm run db:seed` and refresh the page.</p>
-          </div>
-        ) : (
-          rows.map((row) => {
-            const items = films.filter((f) => row.filter(f.category));
-            if (items.length === 0) return null;
-            return (
-              <section key={row.title}>
-                <h2 className="mb-4 font-display text-2xl font-medium">
-                  {row.title}
-                </h2>
-                <div className="row-scroll flex gap-4 overflow-x-auto pb-2">
-                  {items.map((film) => (
-                    <PosterCard key={film.slug} film={film} />
-                  ))}
-                </div>
-              </section>
-            );
-          })
-        )}
-      </div>
+      <BrowseCatalog films={films} />
     </div>
   );
 }

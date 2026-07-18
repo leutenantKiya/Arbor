@@ -12,6 +12,7 @@
     "db:functions": "tsx scripts/install-db-functions.ts"
   },
   "dependencies": {
+    "@fontsource-variable/big-shoulders-display": "^5.2.5",
     "@neondatabase/neon-js": "^0.6.2-beta",
     "@neondatabase/serverless": "^1.1.0",
     "@particle-network/authkit": "^2.1.0",

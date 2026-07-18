@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Your Time · Nocturne</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700;800&family=Fraunces:ital,wght@0,500;0,600;0,700;1,500&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --void:#07080d;
+    --panel:#0d0f0d;
+    --panel-2:#141712;
+    --plum:#160f28;
+    --ink:#f4efe6;
+    --ink-dim:rgba(244,239,230,.62);
+    --ink-faint:rgba(244,239,230,.38);
+    --amber:#f2a93b;
+    --amber-2:#e8823a;
+    --violet:#8d7bff;
+    --violet-2:#5b47d1;
+    --sage:#74c39a;
+    --line:rgba(244,239,230,.14);
+    --line-soft:rgba(244,239,230,.08);
+
+    --f-display:'Big Shoulders Display',sans-serif;
+    --f-serif:'Fraunces',serif;
+    --f-mono:'IBM Plex Mono',monospace;
+  }
+
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{
+    background:var(--void);
+    color:var(--ink);
+    font-family:var(--f-mono);
+    -webkit-font-smoothing:antialiased;
+    min-height:100vh;
+    overflow-x:hidden;
+  }
+  a{color:inherit;text-decoration:none;}
+  button{font:inherit;color:inherit;background:none;border:none;cursor:pointer;}
+  :focus-visible{outline:2px solid var(--amber);outline-offset:2px;border-radius:3px;}
+  ::selection{background:var(--amber);color:var(--void);}
+
+  /* ---------- ambient backdrop (quiet — this is a billing page, not a hero) ---------- */
+  .ambient{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden;}
+  .ambient span{position:absolute;border-radius:50%;filter:blur(80px);opacity:.16;animation:drift 34s ease-in-out infinite alternate;}
+  .ambient span:nth-child(1){width:40vw;height:40vw;left:-10vw;top:-14vw;background:radial-gradient(circle,var(--violet-2),transparent 70%);}
+  .ambient span:nth-child(2){width:32vw;height:32vw;right:-8vw;top:30vh;background:radial-gradient(circle,var(--amber-2),transparent 70%);animation-duration:40s;animation-delay:-6s;}
+  @keyframes drift{0%{transform:translate(0,0) scale(1);}100%{transform:translate(3vw,2vw) scale(1.1);}}
+  @media (prefers-reduced-motion: reduce){.ambient span{animation:none;}}
+
+  /* ---------- nav ---------- */
+  .nav{
+    position:relative;z-index:5;
+    display:flex;align-items:center;gap:28px;
+    padding:20px clamp(20px,4vw,48px);
+    border-bottom:1px solid var(--line-soft);
+    background:rgba(7,8,13,.7);
+    backdrop-filter:blur(10px);
+  }
+  .logo{
+    display:flex;align-items:center;gap:9px;flex:none;
+    font-family:var(--f-display);font-weight:800;font-size:1.2rem;letter-spacing:.02em;
+  }
+  .logo i{width:8px;height:8px;border-radius:50%;background:var(--amber);box-shadow:0 0 10px 2px rgba(242,169,59,.65);animation:pulse 2.4s ease-in-out infinite;}
+  @keyframes pulse{0%,100%{opacity:1;transform:scale(1);}50%{opacity:.4;transform:scale(.7);}}
+
+  .nav-links{display:flex;gap:26px;font-size:.78rem;letter-spacing:.04em;color:var(--ink-dim);}
+  .nav-links a{position:relative;padding:4px 0;transition:color .2s;}
+  .nav-links a:hover{color:var(--ink);}
+  .nav-links a.active{color:var(--amber);}
+  .nav-links a.active::after{content:'';position:absolute;left:0;right:0;bottom:-2px;height:1.5px;background:var(--amber);}
+
+  .nav-right{margin-left:auto;display:flex;align-items:center;gap:10px;}
+
+  .chip{
+    display:flex;align-items:center;gap:7px;
+    font-size:.72rem;letter-spacing:.02em;color:var(--ink-dim);
+    padding:8px 12px;border-radius:999px;
+    border:1px solid var(--line-soft);background:rgba(244,239,230,.03);
+    white-space:nowrap;
+  }
+  .chip svg{width:12px;height:12px;flex:none;}
+  .chip button{display:flex;color:var(--ink-faint);transition:color .2s;}
+  .chip button:hover{color:var(--ink);}
+  .chip.balance{color:var(--amber);font-weight:500;}
+  .chip.time{
+    color:var(--ink);font-weight:600;
+    border-color:rgba(242,169,59,.3);background:rgba(242,169,59,.07);
+  }
+
+  .btn-outline{
+    font-family:var(--f-mono);font-size:.75rem;letter-spacing:.03em;
+    padding:9px 16px;border-radius:999px;
+    border:1px solid var(--line);color:var(--ink-dim);
+    transition:border-color .2s,color .2s,background .2s;
+    white-space:nowrap;
+  }
+  .btn-outline:hover{border-color:rgba(244,239,230,.4);color:var(--ink);background:rgba(244,239,230,.05);}
+
+  @media (max-width:900px){.nav-links{display:none;}}
+  @media (max-width:640px){.chip.balance{display:none;}}
+  @media (max-width:460px){
+    .nav{gap:10px;}
+    .nav-right{gap:6px;}
+    .chip{padding:7px 9px;}
+    .chip.wallet .addr-text{display:none;}
+    .btn-outline{padding:9px 11px;font-size:.7rem;}
+  }
+  @media (max-width:340px){
+    .nav{gap:8px;padding-left:14px;padding-right:14px;}
+    .logo{font-size:1rem;gap:6px;}
+    .nav-right{gap:5px;}
+    .chip{padding:6px 8px;font-size:.66rem;}
+    .btn-outline{padding:8px 9px;font-size:.64rem;}
+  }
+
+  /* ---------- content ---------- */
+  .content{position:relative;z-index:1;max-width:960px;margin:0 auto;padding:56px clamp(20px,4vw,48px) 90px;}
+
+  .page-head{margin-bottom:34px;opacity:0;animation:rise .7s cubic-bezier(.16,1,.3,1) forwards;}
+  .page-head h1{
+    font-family:var(--f-serif);font-weight:600;font-size:clamp(2.2rem,4.4vw,3rem);letter-spacing:-.01em;
+  }
+  .page-head p{
+    font-family:var(--f-mono);font-size:.85rem;line-height:1.65;color:var(--ink-dim);
+    max-width:58ch;margin-top:14px;
+  }
+  @keyframes rise{from{opacity:0;transform:translateY(18px);}to{opacity:1;transform:translateY(0);}}
+
+  .balance-card{
+    border:1px solid var(--line);border-radius:16px;
+    padding:28px 30px;margin-bottom:28px;
+    background:linear-gradient(160deg, rgba(242,169,59,.06), transparent 60%), var(--panel);
+    opacity:0;animation:rise .7s .1s cubic-bezier(.16,1,.3,1) forwards;
+  }
+  .balance-label{font-size:.68rem;letter-spacing:.14em;color:var(--amber);margin-bottom:10px;}
+  .balance-num{
+    font-family:var(--f-serif);font-weight:600;font-size:clamp(2.4rem,5vw,3.2rem);
+    transition:color .3s;
+  }
+  .balance-num.flash{animation:num-flash 1.1s ease-out;}
+  @keyframes num-flash{0%{color:var(--amber);}100%{color:var(--ink);}}
+
+  .pricing-grid{
+    display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:30px;
+  }
+  @media (max-width:760px){.pricing-grid{grid-template-columns:1fr;}}
+
+  .price-card{
+    position:relative;
+    border:1px solid var(--line);border-radius:16px;
+    padding:26px 24px 24px;
+    background:var(--panel);
+    display:flex;flex-direction:column;
+    opacity:0;animation:rise .7s cubic-bezier(.16,1,.3,1) forwards;
+  }
+  .pricing-grid .price-card:nth-child(1){animation-delay:.18s;}
+  .pricing-grid .price-card:nth-child(2){animation-delay:.26s;}
+  .pricing-grid .price-card:nth-child(3){animation-delay:.34s;}
+
+  .price-card.popular{
+    border-color:rgba(242,169,59,.55);
+    box-shadow:0 0 0 1px rgba(242,169,59,.12), 0 18px 40px -18px rgba(242,169,59,.35);
+  }
+  .price-tag{font-size:.64rem;letter-spacing:.12em;color:var(--amber);margin-bottom:12px;}
+
+  .price-hours{font-family:var(--f-serif);font-weight:600;font-size:1.7rem;margin-bottom:4px;}
+  .price-hours span{font-size:1rem;font-weight:500;color:var(--ink-dim);margin-left:4px;}
+  .price-sub{font-size:.78rem;color:var(--ink-faint);margin-bottom:18px;}
+  .price-amount{font-family:var(--f-serif);font-weight:600;font-size:1.7rem;color:var(--ink);margin-bottom:18px;}
+
+  .buy-btn{
+    margin-top:auto;
+    display:flex;align-items:center;justify-content:center;gap:8px;
+    font-family:var(--f-mono);font-size:.82rem;font-weight:500;
+    padding:13px 18px;border-radius:999px;
+    background:linear-gradient(100deg,var(--amber),var(--amber-2));
+    color:var(--void);
+    transition:transform .2s, box-shadow .2s, opacity .2s;
+    box-shadow:0 8px 24px -10px rgba(242,169,59,.5);
+  }
+  .buy-btn:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 12px 28px -8px rgba(242,169,59,.65);}
+  .buy-btn:disabled{opacity:.75;cursor:default;}
+  .buy-btn .spin{width:12px;height:12px;border-radius:50%;border:2px solid rgba(7,8,13,.3);border-top-color:var(--void);animation:spin .7s linear infinite;}
+  .buy-btn.success{background:linear-gradient(100deg,var(--sage),#5aa87e);}
+  @keyframes spin{to{transform:rotate(360deg);}}
+
+  .fine-print{
+    font-size:.72rem;line-height:1.6;color:var(--ink-faint);
+    max-width:64ch;
+    opacity:0;animation:rise .7s .42s cubic-bezier(.16,1,.3,1) forwards;
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    *{animation-duration:.01ms !important;animation-iteration-count:1 !important;transition-duration:.01ms !important;}
+    .page-head,.balance-card,.price-card,.fine-print{opacity:1;transform:none;}
+  }
+</style>
+</head>
+<body>
+
+<div class="ambient"><span></span><span></span></div>
+
+<nav class="nav">
+  <div class="logo"><i></i>NOCTURNE</div>
+  <div class="nav-links">
+    <a href="streaming-landing-page.html">Browse</a>
+    <a href="#" class="active">Time</a>
+    <a href="filmmaker-dashboard.html">Studio</a>
+  </div>
+  <div class="nav-right">
+    <div class="chip wallet">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 7a2 2 0 0 1 2-2h13a1 1 0 0 1 1 1v3"/><path d="M3 7v10a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-7a1 1 0 0 0-1-1H6a2 2 0 0 1 0-4h13"/></svg>
+      <span class="addr-text" id="addrText">0x4F2c…9A2c</span>
+      <button id="copyAddr" aria-label="Copy address" title="Copy address">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M4 16V5a1 1 0 0 1 1-1h11"/></svg>
+      </button>
+    </div>
+    <div class="chip balance" id="usdcChip">$0.00 USDC</div>
+    <div class="chip time" id="timeChip">0m</div>
+    <button class="btn-outline">Sign Out</button>
+  </div>
+</nav>
+
+<main class="content">
+  <header class="page-head">
+    <h1>Your time</h1>
+    <p>Time is only used while a film is playing. Browsing, trailers, and pausing are always free. Your balance never runs out on its own.</p>
+  </header>
+
+  <div class="balance-card">
+    <div class="balance-label">CURRENT BALANCE</div>
+    <div class="balance-num" id="balanceNum">0s</div>
+  </div>
+
+  <div class="pricing-grid" id="pricingGrid">
+    <div class="price-card" data-seconds="9000" data-price="2.49">
+      <div class="price-hours">2.5<span>hours</span></div>
+      <div class="price-sub">A film night</div>
+      <div class="price-amount">$2.49</div>
+      <button class="buy-btn">Buy — $2.49</button>
+    </div>
+
+    <div class="price-card popular" data-seconds="18000" data-price="4.49">
+      <div class="price-tag">MOST POPULAR</div>
+      <div class="price-hours">5<span>hours</span></div>
+      <div class="price-sub">Most popular</div>
+      <div class="price-amount">$4.49</div>
+      <button class="buy-btn">Buy — $4.49</button>
+    </div>
+
+    <div class="price-card" data-seconds="36000" data-price="7.99">
+      <div class="price-hours">10<span>hours</span></div>
+      <div class="price-sub">A festival at home</div>
+      <div class="price-amount">$7.99</div>
+      <button class="buy-btn">Buy — $7.99</button>
+    </div>
+  </div>
+
+  <p class="fine-print">Purchases are gasless on Arbitrum via Particle Network. USDC is deposited to the NocturneVault contract — filmmakers are settled daily.</p>
+</main>
+
+<script>
+  // ---- copy wallet address ----
+  const copyBtn = document.getElementById('copyAddr');
+  copyBtn.addEventListener('click', async () => {
+    try {
+      await navigator.clipboard.writeText('0x4F2c1a9E7d3B8f60c2A5D41e9B7c0F2a9A2c');
+    } catch (err) { /* clipboard may be unavailable in sandboxed contexts */ }
+    const original = copyBtn.innerHTML;
+    copyBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 13l4 4L19 7"/></svg>';
+    setTimeout(() => { copyBtn.innerHTML = original; }, 1200);
+  });
+
+  // ---- balance state ----
+  let balanceSeconds = 0;
+
+  function formatLong(seconds) {
+    if (seconds <= 0) return '0s';
+    const h = Math.floor(seconds / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
+    const s = seconds % 60;
+    if (h > 0) return `${h}h ${m}m`;
+    if (m > 0) return `${m}m ${s}s`;
+    return `${s}s`;
+  }
+  function formatShort(seconds) {
+    if (seconds <= 0) return '0m';
+    const h = Math.floor(seconds / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
+    return h > 0 ? `${h}h ${m}m` : `${m}m`;
+  }
+
+  const balanceNumEl = document.getElementById('balanceNum');
+  const timeChipEl = document.getElementById('timeChip');
+
+  function updateBalanceDisplay() {
+    balanceNumEl.textContent = formatLong(balanceSeconds);
+    timeChipEl.textContent = formatShort(balanceSeconds);
+    balanceNumEl.classList.remove('flash');
+    void balanceNumEl.offsetWidth; // restart animation
+    balanceNumEl.classList.add('flash');
+    timeChipEl.classList.remove('flash-chip');
+  }
+
+  // ---- purchase flow ----
+  document.querySelectorAll('.price-card').forEach(card => {
+    const btn = card.querySelector('.buy-btn');
+    const seconds = parseInt(card.dataset.seconds, 10);
+    const originalLabel = btn.textContent;
+
+    btn.addEventListener('click', () => {
+      if (btn.disabled) return;
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spin"></span> Processing…';
+
+      setTimeout(() => {
+        balanceSeconds += seconds;
+        updateBalanceDisplay();
+        btn.classList.add('success');
+        btn.innerHTML = '&#10003; Added to balance';
+
+        setTimeout(() => {
+          btn.classList.remove('success');
+          btn.disabled = false;
+          btn.textContent = originalLabel;
+        }, 1600);
+      }, 900);
+    });
+  });
+</script>
+
+</body>
+</html>

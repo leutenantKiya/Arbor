@@ -1,22 +1,75 @@
 @import "tailwindcss";
+@import '@fontsource-variable/big-shoulders-display';
+
 
 @theme {
-  /* Arbor palette — dark cinema, organic green, projector amber */
-  --color-bark: #0c0f0d;
-  --color-surface: #141813;
-  --color-surface-2: #1c221b;
-  --color-line: #2a322a;
-  --color-moss: #2f6b4f;
-  --color-fern: #48a077;
-  --color-amber: #e8a33d;
-  --color-amber-soft: #f0bc6e;
-  --color-cream: #f2efe9;
-  --color-sage: #98a595;
+  /* ── Arbor "Nocturne" palette — deep void, projector amber, violet dusk ──
+     Token NAMES are kept stable (bark/surface/cream/sage/amber/…) so every
+     existing component adopts the new look without edits. Translucent template
+     colors are baked to solid equivalents over the void so Tailwind opacity
+     modifiers (bg-amber/30, border-line/60) still work cleanly. */
+  --color-bark: #07080d;        /* void — page background */
+  --color-surface: #0d0f10;     /* panel — cards */
+  --color-surface-2: #14120f;   /* panel-2 — raised/warm cards */
+  --color-plum: #160f28;        /* violet-black accent bg */
+  --color-plum-2: #1f1436;
 
+  --color-line: #262830;        /* hairline borders */
+  --color-line-soft: #181a20;   /* faint dividers */
+
+  --color-cream: #f4efe6;       /* ink — primary text */
+  --color-sage: #9a978e;        /* ink-dim — muted text */
+  --color-sage-light: #c0bdb4;  /* slightly brighter muted */
+  --color-ink-faint: #63615b;   /* faintest text */
+
+  --color-amber: #f2a93b;       /* projector amber — primary accent */
+  --color-amber-2: #e8823a;     /* orange gradient partner */
+  --color-amber-soft: #f4c579;  /* light amber */
+
+  --color-violet: #8d7bff;      /* dusk violet — secondary accent */
+  --color-violet-2: #5b47d1;
+
+  --color-moss: #2f6b4f;        /* deep success green */
+  --color-fern: #74c39a;        /* success green (checks, "added") */
+  --color-brick: #c96a5c;       /* down-trend / danger */
+
+  /* Fraunces (serif) + Inter (UI) already loaded; Big Shoulders is provided
+     locally via the package import above, and IBM Plex Mono is injected by the
+     layout for labels/tickers/wallet addresses. */
   --font-display: var(--font-fraunces), Georgia, serif;
   --font-body: var(--font-inter), system-ui, sans-serif;
+  --font-bigshoulders: "Big Shoulders Display Variable", "Big Shoulders Display", "Arial Narrow", sans-serif;
+  --font-block: var(--font-bigshoulders);
+  --font-mono: var(--font-ibmplex), ui-monospace, "SFMono-Regular", monospace;
 
   --radius-card: 0.75rem;
+
+  /* ── shared animations (ported from the Mock UI templates) ── */
+  --animate-drift: drift 30s ease-in-out infinite alternate;
+  --animate-rise: rise 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
+  --animate-pulse-dot: pulse-dot 2.4s ease-in-out infinite;
+  --animate-num-flash: num-flash 1.1s ease-out;
+  --animate-spin-fast: spin-fast 0.7s linear infinite;
+}
+
+@keyframes drift {
+  0% { transform: translate(0, 0) scale(1); }
+  100% { transform: translate(3vw, 2vw) scale(1.1); }
+}
+@keyframes rise {
+  from { opacity: 0; transform: translateY(18px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(0.7); }
+}
+@keyframes num-flash {
+  0% { color: var(--color-amber); }
+  100% { color: var(--color-cream); }
+}
+@keyframes spin-fast {
+  to { transform: rotate(360deg); }
 }
 
 html {
@@ -28,6 +81,44 @@ body {
   color: var(--color-cream);
   font-family: var(--font-body);
   -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  background: var(--color-amber);
+  color: var(--color-bark);
+}
+
+/* Ambient drifting light blooms — quiet backdrop for content pages.
+   Usage: <div class="ambient"><span></span><span></span></div> */
+.ambient {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+.ambient span {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  opacity: 0.16;
+  animation: var(--animate-drift);
+}
+.ambient span:nth-child(1) {
+  width: 40vw;
+  height: 40vw;
+  left: -10vw;
+  top: -14vw;
+  background: radial-gradient(circle, var(--color-violet-2), transparent 70%);
+}
+.ambient span:nth-child(2) {
+  width: 32vw;
+  height: 32vw;
+  right: -8vw;
+  top: 30vh;
+  background: radial-gradient(circle, var(--color-amber-2), transparent 70%);
+  animation-duration: 40s;
+  animation-delay: -6s;
 }
 
 /* Poster rows scroll horizontally without a visible scrollbar */
@@ -45,5 +136,8 @@ body {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+  }
+  .ambient span {
+    animation: none;
   }
 }

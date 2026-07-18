@@ -2,6 +2,7 @@ import Link from "next/link";
 import { AuthButton } from "./auth-button";
 import { BalancePill } from "./balance-pill";
 import { Logo } from "./logo";
+import { NavLinks } from "./nav-links";
 import { WalletInfo } from "./wallet-info";
 import { getSession } from "@/lib/auth/server";
 import { db } from "@/lib/db/client";
@@ -38,28 +39,18 @@ export async function Nav() {
   }
 
   return (
-    <header className="fixed inset-x-0 top-0 z-50 border-b border-line/60 bg-bark/80 backdrop-blur-md">
-      <div className="mx-auto flex h-16 max-w-7xl items-center gap-8 px-6">
+    <header className="fixed inset-x-0 top-0 z-50 border-b border-line-soft bg-bark/70 backdrop-blur-md">
+      <div className="mx-auto flex h-16 max-w-7xl items-center gap-7 px-6">
         <Link href="/" className="flex items-center gap-2">
           <Logo className="h-7 w-7" />
-          <span className="font-display text-xl font-semibold tracking-tight">
+          <span className="font-block text-2xl font-extrabold tracking-wide">
             Arbor
           </span>
         </Link>
 
-        <nav className="flex items-center gap-6 text-sm text-sage">
-          <Link href="/" className="transition-colors hover:text-cream">
-            Browse
-          </Link>
-          <Link href="/time" className="transition-colors hover:text-cream">
-            Time
-          </Link>
-          <Link href="/studio" className="transition-colors hover:text-cream">
-            Studio
-          </Link>
-        </nav>
+        <NavLinks />
 
-        <div className="ml-auto flex items-center gap-4">
+        <div className="ml-auto flex items-center gap-3">
           {session ? (
             <>
               {/* Wallet Info (USDC + Address with Copy) */}
