@@ -1,0 +1,37 @@
+-- note : Run these query in sql if you havent done so to update the tables :
+ALTER TABLE users ADD is_filmmaker TEXT CHECK (is_filmmaker IN ('0', '1')) DEFAULT '0'
+
+CREATE TABLE Applications (
+    id SERIAL PRIMARY KEY,
+    user_id UUID NOT NULL,
+
+    full_name VARCHAR(400) NOT NULL,
+    email VARCHAR(200) NOT NULL,
+    country VARCHAR(60) NOT NULL,
+
+    portfolio_links TEXT,
+
+    has_released_work_before VARCHAR(10) CHECK (has_released_work_before IN ('yes', 'no')) NOT NULL,
+    previous_films_link TEXT,
+
+    experience VARCHAR(20) CHECK (experience IN ('beginner', 'intermediate', 'professional')) NOT NULL,
+    previous_awards_link TEXT,
+
+    short_bio TEXT,
+    considered_genre VARCHAR(200),
+
+    holds_full_rights VARCHAR(10) CHECK (holds_full_rights IN ('yes', 'no')) NOT NULL,
+
+    applicant_type VARCHAR(30) CHECK (applicant_type IN ('individual', 'production_company')) NOT NULL,
+
+    co_owner_full_name VARCHAR(400),
+
+    payment_wallet_address VARCHAR(100) NOT NULL,
+
+    closing_statement TEXT,
+
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    FOREIGN KEY (user_id) REFERENCES users(id)
+);
