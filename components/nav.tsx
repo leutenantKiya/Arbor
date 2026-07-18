@@ -3,6 +3,7 @@ import { AuthButton } from "./auth-button";
 import { BalancePill } from "./balance-pill";
 import { Logo } from "./logo";
 import { NavLinks } from "./nav-links";
+import { FilmSearch } from "./film-search";
 import { WalletInfo } from "./wallet-info";
 import { getSession } from "@/lib/auth/server";
 import { db } from "@/lib/db/client";
@@ -10,6 +11,7 @@ import { users } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { getUsdcBalance } from "@/lib/blockchain/usdc";
 import { formatUsdcAmount } from "@/lib/blockchain/utils";
+import { getFilms } from "@/lib/db/queries";
 
 async function getUserBalance(userId: string): Promise<number | null> {
   try {
@@ -25,7 +27,10 @@ async function getUserBalance(userId: string): Promise<number | null> {
 }
 
 export async function Nav() {
-  const session = await getSession();
+  const [session, films] = await Promise.all([
+    getSession(),
+    getFilms().catch(() => []),
+  ]);
   const balance = session ? await getUserBalance(session.userId) : null;
 
   let usdcBalance: string | null = null;
@@ -49,6 +54,8 @@ export async function Nav() {
         </Link>
 
         <NavLinks />
+
+        <FilmSearch films={films} />
 
         <div className="ml-auto flex items-center gap-3">
           {session ? (

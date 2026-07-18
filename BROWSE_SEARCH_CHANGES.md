@@ -2,46 +2,43 @@
 
 ## Summary
 
-Added a working search and browse experience to the main Browse page so users can find films they want to watch directly from the catalog.
+The film search has been redesigned into a focused navigation search experience inspired by the supplied streaming-platform reference. Users now open search from the top navigation instead of from an inline field within the Browse page.
 
 ## What Changed
 
-- Added `components/browse-catalog.tsx`.
-- Updated `app/page.tsx` to render the new `BrowseCatalog` component below the featured film hero.
-- Moved the existing browse rows into the new component so the page still shows the original sections when no search is active.
-- Added a search input that filters films instantly on the client side.
+- Added a compact Search control beside the primary navigation links.
+- Added a dark, centered search dialog with a dimmed and blurred page background.
+- The dialog automatically focuses the text field when opened.
+- Results update instantly while the user types.
+- Search results include the film poster, title, year, genre, runtime, and a short synopsis.
+- Added genre suggestions for Animation, Sci-Fi, and Fantasy before a query is entered.
+- Added Clear, click-outside, and Escape-key ways to close or reset search.
+- Kept the main Browse page focused on its existing film rows instead of duplicating a second search interface there.
 
 ## Search Behavior
 
-The search currently matches against:
+Search matches the following film information:
 
-- Film title
+- Title
 - Synopsis
-- Category or genre
+- Genre/category
 - Filmmaker
 - Release year
 
-When a user types into the search field:
-
-- The normal browse rows are replaced with a results grid.
-- A result count is shown.
-- A clear button appears.
-- If there are no matches, the user sees an empty state with guidance.
-
-When the search is cleared, the original Browse rows return.
+Selecting a result takes the viewer to that film's detail page. If no match is found, the dialog provides guidance for refining the search.
 
 ## Files Touched
 
-- `app/page.tsx`
-  - Imports `BrowseCatalog`.
-  - Keeps the featured film hero.
-  - Passes the loaded films into the Browse search component.
+- `components/film-search.tsx`
+  - New client-side navigation button and modal search dialog.
+  - Handles filtering, keyboard interaction, suggestions, and result display.
+
+- `components/nav.tsx`
+  - Loads the catalog for the navigation search.
+  - Renders the new Search control next to the Browse, Time, and Studio links.
 
 - `components/browse-catalog.tsx`
-  - New client component.
-  - Stores the search query with React state.
-  - Filters films with `useMemo`.
-  - Reuses the existing `PosterCard` component for both browse rows and search results.
+  - Simplified to show the Browse page headings and film rows only.
 
 ## Verification
 
@@ -51,12 +48,8 @@ Ran:
 npm run typecheck
 ```
 
-Result:
-
-```text
-tsc --noEmit completed successfully
-```
+Result: `tsc --noEmit` completed successfully.
 
 ## Notes
 
-This implementation does not require a database migration or a new API route. It uses the films already loaded by the Browse page and filters them in the browser.
+The search filters the films already loaded in the browser; no new API route or database migration was required.
