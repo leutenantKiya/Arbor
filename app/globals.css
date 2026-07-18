@@ -50,6 +50,8 @@
   --animate-pulse-dot: pulse-dot 2.4s ease-in-out infinite;
   --animate-num-flash: num-flash 1.1s ease-out;
   --animate-spin-fast: spin-fast 0.7s linear infinite;
+  --animate-modal-in: modal-in 0.28s cubic-bezier(0.16, 1, 0.3, 1) both;
+  --animate-backdrop-in: backdrop-in 0.2s ease both;
 }
 
 @keyframes drift {
@@ -70,6 +72,14 @@
 }
 @keyframes spin-fast {
   to { transform: rotate(360deg); }
+}
+@keyframes modal-in {
+  from { opacity: 0; transform: translateY(10px) scale(0.965); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes backdrop-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 html {

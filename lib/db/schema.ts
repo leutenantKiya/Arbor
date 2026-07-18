@@ -7,10 +7,12 @@ import {
   integer,
   pgTable,
   primaryKey,
+  serial,
   text,
   timestamp,
   uniqueIndex,
   uuid,
+  varchar,
 } from "drizzle-orm/pg-core";
 
 // ── Auth accounts (email + password hash, self-contained — no external auth service) ──
@@ -223,4 +225,43 @@ export const settlementItems = pgTable("settlement_items", {
   walletAddress: text("wallet_address").notNull().default(""),
   // pending → paid; updated when CreatorPaid event is confirmed
   status: text("status").notNull().default("pending"),
+});
+
+// Creator ("Apply as Creator") applications submitted from the Studio page.
+// This mirrors the pre-existing `applications` table exactly (introspected from
+// the DB — NOT created by drizzle-kit push). Notable: id is a serial, user_id
+// is NOT NULL (a session is required to apply), the yes/no answers are stored
+// as short varchars (not booleans), and every varchar has a length cap the
+// Server Action clamps to. id and the timestamps are DB-managed — the client
+// never supplies them.
+export const applications = pgTable("applications", {
+  id: serial("id").primaryKey(),
+  userId: uuid("user_id")
+    .notNull()
+    .references(() => users.id),
+  // ── required ──
+  fullName: varchar("full_name", { length: 400 }).notNull(),
+  email: varchar("email", { length: 200 }).notNull(),
+  country: varchar("country", { length: 60 }).notNull(),
+  // "yes" | "no" — stored as varchar(10), not a boolean column
+  hasReleasedWorkBefore: varchar("has_released_work_before", {
+    length: 10,
+  }).notNull(),
+  experience: varchar("experience", { length: 20 }).notNull(),
+  // "yes" | "no" — stored as varchar(10), not a boolean column
+  holdsFullRights: varchar("holds_full_rights", { length: 10 }).notNull(),
+  applicantType: varchar("applicant_type", { length: 30 }).notNull(),
+  paymentWalletAddress: varchar("payment_wallet_address", {
+    length: 100,
+  }).notNull(),
+  // ── optional ──
+  portfolioLinks: text("portfolio_links"),
+  previousFilmsLink: text("previous_films_link"),
+  previousAwardsLink: text("previous_awards_link"),
+  shortBio: text("short_bio"),
+  consideredGenre: varchar("considered_genre", { length: 200 }),
+  coOwnerFullName: varchar("co_owner_full_name", { length: 400 }),
+  closingStatement: text("closing_statement"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
 });

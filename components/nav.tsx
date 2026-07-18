@@ -44,9 +44,9 @@ export async function Nav() {
   }
 
   return (
-    <header className="fixed inset-x-0 top-0 z-50 border-b border-line-soft bg-bark/70 backdrop-blur-md">
-      <div className="mx-auto flex h-16 max-w-7xl items-center gap-7 px-6">
-        <Link href="/" className="flex items-center gap-2">
+    <header className="fixed inset-x-0 top-0 z-[70] border-b border-line-soft bg-bark/70 backdrop-blur-md">
+      <div className="mx-auto flex h-16 max-w-7xl items-center gap-3 px-4 sm:gap-5 sm:px-6 lg:gap-7">
+        <Link href="/" className="flex shrink-0 items-center gap-2">
           <Logo className="h-7 w-7" />
           <span className="font-block text-2xl font-extrabold tracking-wide">
             Arbor
@@ -55,11 +55,11 @@ export async function Nav() {
 
         <NavLinks />
 
-        <div className="ml-auto">
+        <div className="min-w-0 flex-1">
           <FilmSearch films={films} />
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex shrink-0 items-center gap-3">
           {session ? (
             <>
               {/* Wallet Info (USDC + Address with Copy) */}

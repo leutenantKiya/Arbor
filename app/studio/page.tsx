@@ -1,6 +1,7 @@
 import { db } from "@/lib/db/client";
 import { films, filmmakers, debitEvents, playbackSessions } from "@/lib/db/schema";
 import { eq, sum, sql } from "drizzle-orm";
+import { ApplyCreator } from "@/components/apply-creator";
 
 type FilmEarning = {
   slug: string;
@@ -80,6 +81,9 @@ export default async function StudioPage() {
         Filmmakers earn 90% of every second watched, settled on-chain. Not next
         quarter — tonight.
       </p>
+
+      {/* Primary CTA — become a creator */}
+      <ApplyCreator />
 
       {/* Summary cards */}
       <div className="mt-8 grid gap-5 sm:grid-cols-2">
