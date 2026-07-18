@@ -9,22 +9,22 @@
 <link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700;800;900&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
   :root{
-    --void:#07080d;
-    --panel:#100b1c;
-    --panel-2:#180f2b;
-    --plum:#160f28;
-    --ink:#f4efe6;
-    --ink-dim:rgba(244,239,230,.62);
-    --ink-faint:rgba(244,239,230,.38);
-    --amber:#f2a93b;
-    --amber-2:#e8823a;
-    --violet:#8d7bff;
-    --violet-2:#5b47d1;
-    --sage:#74c39a;
-    --sage-dim:rgba(116,195,154,.16);
-    --brick:#e08072;
-    --line:rgba(244,239,230,.14);
-    --line-soft:rgba(244,239,230,.08);
+    --void:#111111;
+    --panel:#17180f;
+    --panel-2:#1d1e17;
+    --plum:#17180f;
+    --ink:#FFFFFF;
+    --ink-dim:#8A8B88;
+    --ink-faint:rgba(138,139,136,.65);
+    --amber:#D9A24A;
+    --amber-2:#ECA742;
+    --violet:#4a4d3d;
+    --violet-2:#2A2C24;
+    --sage:#D9A24A;
+    --sage-dim:rgba(217,162,74,.16);
+    --brick:#c96a5c;
+    --line:#3c3f33;
+    --line-soft:#2A2C24;
 
     --f-display:'Big Shoulders Display',sans-serif;
     --f-ui:'Inter',sans-serif;
@@ -607,8 +607,8 @@
             <svg viewBox="0 0 600 190" preserveAspectRatio="none">
               <defs>
                 <linearGradient id="areaFill" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stop-color="#f2a93b" stop-opacity="0.35"/>
-                  <stop offset="100%" stop-color="#f2a93b" stop-opacity="0"/>
+                  <stop offset="0%" stop-color="#D9A24A" stop-opacity="0.35"/>
+                  <stop offset="100%" stop-color="#D9A24A" stop-opacity="0"/>
                 </linearGradient>
               </defs>
               <g id="chartGroup"></g>
@@ -743,7 +743,7 @@
     setTimeout(() => {
       group.innerHTML = `
         <path d="${areaPath}" fill="url(#areaFill)" stroke="none"></path>
-        <path d="${linePath}" fill="none" stroke="#f2a93b" stroke-width="2.2" stroke-linecap="round"></path>
+        <path d="${linePath}" fill="none" stroke="#D9A24A" stroke-width="2.2" stroke-linecap="round"></path>
       `;
       group.style.opacity = 1;
     }, 160);
