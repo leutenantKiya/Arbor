@@ -14,6 +14,19 @@ export function formatSeconds(s: number): string {
   return `${m}m`;
 }
 
+/** "2.4 MB/s" — for upload-progress speed display. */
+export function formatBytesPerSecond(bytesPerSec: number): string {
+  if (!Number.isFinite(bytesPerSec) || bytesPerSec <= 0) return "";
+  const units = ["B/s", "KB/s", "MB/s", "GB/s"];
+  let value = bytesPerSec;
+  let unitIndex = 0;
+  while (value >= 1024 && unitIndex < units.length - 1) {
+    value /= 1024;
+    unitIndex++;
+  }
+  return `${value.toFixed(value >= 10 || unitIndex === 0 ? 0 : 1)} ${units[unitIndex]}`;
+}
+
 /** "3 hours ago", "just now" — for recent-activity style timestamps. */
 export function formatRelativeTime(date: Date): string {
   const diffMs = Date.now() - date.getTime();

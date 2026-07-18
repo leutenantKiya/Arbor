@@ -48,7 +48,13 @@ const nextConfig: NextConfig = {
   images: {
     // Posters are self-hosted in /public/posters. When media moves to
     // Cloudflare R2 (ARCHITECTURE.md §6), add the R2 hostname here.
-    remotePatterns: [],
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "res.cloudinary.com",
+        pathname: "/drbxuk35/image/upload/**",
+      },
+    ],
   },
   // `tsc --noEmit` is run standalone as the real type gate (`npm run
   // typecheck`) and passes clean. The build's own type-check pass has been

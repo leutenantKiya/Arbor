@@ -2,10 +2,13 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import type { Film } from "@/lib/films";
 import { Logo } from "@/components/logo";
 import { WalletInfo } from "@/components/wallet-info";
 import { FilmSearch } from "@/components/film-search";
+import { UploadFilm } from "@/components/upload-film";
+import { UploadToastHost } from "@/components/upload-toast-host";
 import {
   AnalyticsIcon,
   AudienceIcon,
@@ -15,7 +18,6 @@ import {
   EarningsIcon,
   FilmsIcon,
   MenuIcon,
-  PlusIcon,
   SettingsIcon,
 } from "@/components/studio-icons";
 
@@ -35,17 +37,16 @@ type NavItem = {
   label: string;
   href: string;
   Icon: (props: { className?: string }) => React.JSX.Element;
-  active?: boolean;
 };
 
 const NAV_ITEMS: NavItem[] = [
-  { key: "dashboard", label: "Dashboard", href: "/studio", Icon: DashboardIcon, active: true },
+  { key: "dashboard", label: "Dashboard", href: "/studio", Icon: DashboardIcon },
   { key: "films", label: "My Films", href: "#", Icon: FilmsIcon },
   { key: "analytics", label: "Analytics", href: "#", Icon: AnalyticsIcon },
   { key: "earnings", label: "Earnings", href: "#", Icon: EarningsIcon },
   { key: "audience", label: "Audience", href: "#", Icon: AudienceIcon },
   { key: "comments", label: "Comments", href: "#", Icon: CommentsIcon },
-  { key: "settings", label: "Settings", href: "#", Icon: SettingsIcon },
+  { key: "settings", label: "Settings", href: "/studio/settings", Icon: SettingsIcon },
 ];
 
 function initialsOf(name: string): string {
@@ -67,6 +68,7 @@ export function StudioShell({
   films: Film[];
   children: React.ReactNode;
 }) {
+  const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -105,6 +107,11 @@ export function StudioShell({
 
   return (
     <div className="fixed inset-0 z-[71] flex bg-bark text-cream">
+      {/* Always mounted regardless of the Upload Film modal's open state —
+          this is what lets a background upload's completion toast + dashboard
+          refresh fire even while the modal is closed. */}
+      <UploadToastHost />
+
       {/* Mobile drawer scrim */}
       {mobileOpen && (
         <div
@@ -132,30 +139,30 @@ export function StudioShell({
 
         <nav className="flex-1 space-y-1 overflow-y-auto px-3">
           {NAV_ITEMS.map((item) => (
-            <a
+            <Link
               key={item.key}
               href={item.href}
               title={collapsed ? item.label : undefined}
               onClick={(e) => {
-                if (!item.active) e.preventDefault();
+                if (item.href === "#") e.preventDefault();
                 setMobileOpen(false);
               }}
               className={`group relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors ${
-                item.active
+                pathname === item.href
                   ? "bg-amber/10 text-cream"
                   : "text-ink-dim hover:bg-cream/5 hover:text-cream"
               } ${collapsed ? "md:justify-center" : ""}`}
             >
-              {item.active && (
+              {pathname === item.href && (
                 <span className="absolute left-0 top-1/2 h-[18px] w-[3px] -translate-y-1/2 rounded-full bg-amber" />
               )}
               <item.Icon
-                className={`h-[18px] w-[18px] shrink-0 ${item.active ? "text-amber" : ""}`}
+                className={`h-[18px] w-[18px] shrink-0 ${pathname === item.href ? "text-amber" : ""}`}
               />
               <span className={`truncate ${collapsed ? "md:hidden" : ""}`}>
                 {item.label}
               </span>
-              {!item.active && (
+              {item.href === "#" && (
                 <span
                   className={`ml-auto shrink-0 rounded bg-line-soft px-1.5 py-0.5 font-mono text-[0.58rem] text-ink-faint ${
                     collapsed ? "md:hidden" : ""
@@ -164,7 +171,7 @@ export function StudioShell({
                   Soon
                 </span>
               )}
-            </a>
+            </Link>
           ))}
         </nav>
 
@@ -213,15 +220,7 @@ export function StudioShell({
             {walletAddress && (
               <WalletInfo address={walletAddress} usdcBalance={usdcBalance} />
             )}
-            <button
-              type="button"
-              title="Coming soon"
-              disabled
-              className="inline-flex cursor-not-allowed items-center gap-1.5 rounded-full bg-amber px-4 py-2 text-sm font-medium text-bark opacity-60"
-            >
-              <PlusIcon className="h-4 w-4" />
-              <span className="hidden sm:inline">Upload Film</span>
-            </button>
+            <UploadFilm />
           </div>
         </header>
 

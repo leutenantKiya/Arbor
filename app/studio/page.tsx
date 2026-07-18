@@ -4,33 +4,41 @@ import {
   getFilmmakerBalances,
   isUserFilmmaker,
 } from "@/lib/db/queries";
+import { ensureFilmmakerRecord } from "@/lib/services/filmmaker.service";
 import { CreatorApplicationView } from "@/components/creator-application-view";
 import { FilmmakerDashboard } from "@/components/filmmaker-dashboard";
 
 // The Studio page switches between two views based on users.is_filmmaker:
-//   - "1" → FilmmakerDashboard (a real filmmaker's overview)
-//   - otherwise → CreatorApplicationView (earnings overview + Apply as Creator)
-// Both views share the same underlying data fetches (lib/db/queries.ts) so the
-// query logic exists in exactly one place.
+//   - "1" → FilmmakerDashboard, scoped entirely to this filmmaker's own data.
+//           The underlying filmmakers row is auto-provisioned on first visit
+//           (lib/services/filmmaker.service.ts) — idempotent, so refreshing
+//           never creates a duplicate.
+//   - otherwise → CreatorApplicationView (site-wide earnings overview + Apply
+//           as Creator), unchanged from before.
 export default async function StudioPage() {
   const session = await getSession();
+  const isFilmmaker = session ? await isUserFilmmaker(session.userId) : false;
 
-  const [earnings, filmmakerBalances, isFilmmaker] = await Promise.all([
-    getFilmEarnings(),
-    getFilmmakerBalances(),
-    session ? isUserFilmmaker(session.userId) : Promise.resolve(false),
-  ]);
+  if (isFilmmaker && session) {
+    const filmmakerId = await ensureFilmmakerRecord(session.userId, {
+      walletAddress: session.walletAddress,
+      name: session.name,
+      email: session.email,
+    });
 
-  if (isFilmmaker) {
     return (
       <FilmmakerDashboard
-        displayName={session?.name || session?.email || "Filmmaker"}
-        walletAddress={session?.walletAddress ?? null}
-        earnings={earnings}
-        filmmakerBalances={filmmakerBalances}
+        filmmakerId={filmmakerId}
+        displayName={session.name || session.email || "Filmmaker"}
+        walletAddress={session.walletAddress ?? null}
       />
     );
   }
+
+  const [earnings, filmmakerBalances] = await Promise.all([
+    getFilmEarnings(),
+    getFilmmakerBalances(),
+  ]);
 
   return (
     <CreatorApplicationView

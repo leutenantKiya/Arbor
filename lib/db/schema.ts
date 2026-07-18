@@ -65,13 +65,29 @@ export const users = pgTable(
   ],
 );
 
-export const filmmakers = pgTable("filmmakers", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  name: text("name").notNull(),
-  walletAddress: text("wallet_address").notNull(),
-  // accrued, unsettled earnings in USDC cents (90% share, accrued per debit)
-  pendingCents: integer("pending_cents").notNull().default(0),
-});
+export const filmmakers = pgTable(
+  "filmmakers",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    name: text("name").notNull(),
+    walletAddress: text("wallet_address").notNull(),
+    // accrued, unsettled earnings in USDC cents (90% share, accrued per debit)
+    pendingCents: integer("pending_cents").notNull().default(0),
+    // Links a filmmaker row to the account that owns it. NULL for the
+    // originally-seeded catalog filmmakers (Blender Foundation, etc.) — only
+    // auto-provisioned filmmakers (lib/services/filmmaker.service.ts) have
+    // this set. Nullable + unique so one user maps to at most one filmmaker.
+    userId: uuid("user_id").references(() => users.id),
+    bio: text("bio"),
+    country: text("country"),
+    genre: text("genre"),
+  },
+  (t) => [
+    uniqueIndex("filmmakers_user_id_unique")
+      .on(t.userId)
+      .where(sql`${t.userId} is not null`),
+  ],
+);
 
 export const films = pgTable("films", {
   id: uuid("id").primaryKey().defaultRandom(),
