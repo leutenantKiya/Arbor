@@ -1,0 +1,46 @@
+1. Who you are
+
+Full legal name
+Filmmaker / studio display name (what shows publicly, like "Mara Voss")
+Email
+Country of residence (needed for tax/payout compliance later)
+Portfolio links — website, Vimeo/YouTube, IMDb, socials
+
+2. Background
+
+Have you released work publicly before? (Yes/No)
+Reel or links to previous films
+Experience level — student / independent / professional
+Festival selections or awards (optional)
+Short bio — a couple sentences on what you make and why
+
+3. The film itself
+
+Title
+Logline (one sentence) + full synopsis
+Genre(s)
+Runtime
+Language + subtitles available
+Completion status — finished / picture-locked / rough cut
+Content warnings (violence, sexual content, flashing lights, etc.) — self-reported for rating
+Screener link or upload for review
+
+4. Rights & legal
+
+Do you hold full distribution rights? (Y/N)
+Any existing exclusivity windows (festival, another platform)?
+Confirmation that all music/footage/stock is licensed or original
+Co-owners or collaborators who need credit or a cut of payouts
+Agreement to content policy / terms of service
+
+5. Getting paid
+
+Wallet address for USDC payouts (or "connect later")
+Individual vs. production company/LLC
+Tax form equivalent (W-9 / W-8BEN depending on residency) — required before first payout, not necessarily at application time
+
+6. Fit
+
+How'd you hear about Nocturne?
+What are you hoping for — reach, monetization, both?
+Anything else they want reviewers to know
