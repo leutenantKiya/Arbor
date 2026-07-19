@@ -195,12 +195,23 @@ export function PurchaseButton({
   const isBusy = step === "switching-chain" || step === "approving" || step === "depositing" || step === "confirming";
   const isDone = step === "done";
 
+  // isConnected flips true as soon as the wallet connects, but ConnectKit's
+  // AA plugin resolves smartAccount/publicClient asynchronously afterwards
+  // (ModalProvider's handlePlugin effect awaits plugin.onConnect() before
+  // calling setSmartAccount) — there's a real window where isConnected is
+  // true and these are still null. Gating on them (not just isConnected)
+  // is what actually fixes the "first click silently fails" issue: the
+  // button stays disabled until the click can succeed, instead of being
+  // clickable during that gap.
+  const walletReady = isConnected && !!smartAccount && !!publicClient;
+  const isPreparing = isConnected && !walletReady && step === "idle";
+
   return (
     <div className="mt-6">
       <button
         type="button"
         onClick={handlePurchase}
-        disabled={disabled || isBusy || isDone || !isConnected}
+        disabled={disabled || isBusy || isDone || !walletReady}
         className={`w-full rounded-full py-2.5 text-sm font-medium transition-all ${
           isDone
             ? "bg-fern/20 text-fern"
@@ -209,7 +220,7 @@ export function PurchaseButton({
               : "bg-amber text-bark hover:bg-amber/90 disabled:cursor-not-allowed disabled:bg-amber/10 disabled:text-amber-soft/50"
         }`}
       >
-        {labels[step]}
+        {isPreparing ? "Preparing wallet…" : labels[step]}
       </button>
       {error && (
         <p className="mt-2 text-center text-xs text-red-400">{error}</p>
