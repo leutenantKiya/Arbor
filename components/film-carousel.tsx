@@ -40,6 +40,8 @@ export function FilmCarousel({ films, reverse = false }: { films: Film[]; revers
   }, [isDragging, isPaused, reverse]);
 
   function handlePointerDown(event: React.PointerEvent<HTMLDivElement>) {
+    const target = event.target as HTMLElement;
+    if (target.closest("a")) return;
     event.currentTarget.setPointerCapture(event.pointerId);
     dragStartRef.current = { x: event.clientX, position: positionRef.current, moved: false };
     setIsDragging(true);
@@ -67,7 +69,7 @@ export function FilmCarousel({ films, reverse = false }: { films: Film[]; revers
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}
       onPointerCancel={handlePointerUp}
-      onPointerEnter={() => setIsPaused(true)}
+      onPointerEnter={() => {setIsPaused(true); }}
       onPointerLeave={() => {
         setIsPaused(false);
         setIsDragging(false);
@@ -89,4 +91,4 @@ export function FilmCarousel({ films, reverse = false }: { films: Film[]; revers
       </div>
     </div>
   );
-}
+} 
