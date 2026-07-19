@@ -13,7 +13,7 @@ import {
   type UploadTask,
 } from "@/lib/uploads/store";
 import { useUploadTasks } from "@/lib/uploads/use-upload-tasks";
-import { retryFilmUpload, startFilmUpload } from "@/lib/uploads/manager";
+import { cancelFilmUpload, retryFilmUpload, startFilmUpload } from "@/lib/uploads/manager";
 import { PlusIcon } from "@/components/studio-icons";
 
 // "Upload Film" — trigger button + modal in one component (one modal
@@ -112,6 +112,54 @@ function TaskRow({ task }: { task: UploadTask }) {
   );
 }
 
+// Progress-only view shown after "Start upload": no form, just the live
+// upload status + a Cancel button, until the upload reaches a terminal state
+// (completed/failed) and the form is restored for the next film.
+function ProgressPanel({ task }: { task: UploadTask }) {
+  const isUploading = task.status === "uploading";
+
+  return (
+    <div className="flex flex-col items-center px-6 py-12 text-center sm:px-8">
+      <div className="w-full max-w-sm">
+        <p className="truncate font-display text-xl font-semibold text-cream">
+          {task.fields.title || task.videoFile.name}
+        </p>
+
+        {isUploading ? (
+          <div className="mt-6 h-2 w-full overflow-hidden rounded-full bg-line-soft">
+            <div
+              className="h-full rounded-full bg-amber transition-all duration-200"
+              style={{ width: `${task.progress}%` }}
+            />
+          </div>
+        ) : (
+          <div className="mt-6 h-2 w-full overflow-hidden rounded-full bg-line-soft">
+            <div className="h-full w-1/3 animate-pulse rounded-full bg-amber/60" />
+          </div>
+        )}
+
+        <div className="mt-3 flex items-center justify-between font-mono text-[0.68rem] text-sage">
+          <span>{STATUS_LABEL[task.status]}</span>
+          {isUploading && <span className="tabular-nums">{task.progress}%</span>}
+        </div>
+        {isUploading && task.speedBytesPerSec !== null && (
+          <p className="mt-1 font-mono text-[0.65rem] text-ink-faint">
+            {formatBytesPerSecond(task.speedBytesPerSec)}
+          </p>
+        )}
+
+        <button
+          type="button"
+          onClick={() => cancelFilmUpload(task.id)}
+          className="mt-8 rounded-full border border-line-soft px-6 py-2.5 text-sm font-medium text-sage transition-colors hover:border-cream/40 hover:text-cream"
+        >
+          Cancel upload
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export function UploadFilm() {
   const tasks = useUploadTasks();
   const [open, setOpen] = useState(false);
@@ -119,6 +167,12 @@ export function UploadFilm() {
   const [videoFile, setVideoFile] = useState<File | null>(null);
   const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
   const [fieldError, setFieldError] = useState<string | null>(null);
+
+  // The newest active (non-terminal) upload owns the progress view. While it
+  // exists, the form is hidden and only the upload status + Cancel show.
+  const activeTask = tasks.find((t) =>
+    ACTIVE_STATUSES.includes(t.status),
+  );
 
   const triggerRef = useRef<HTMLButtonElement>(null);
   const videoInputRef = useRef<HTMLInputElement>(null);
@@ -159,6 +213,9 @@ export function UploadFilm() {
     setOpen(false);
     triggerRef.current?.focus();
   }
+
+  // While an upload is in flight, the modal shows the progress panel only.
+  const showProgress = !!activeTask;
 
   // Escape + body scroll lock while open (never gated on upload state).
   useEffect(() => {
@@ -283,20 +340,26 @@ export function UploadFilm() {
                     Publish a new film
                   </h2>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => closeModal()}
-                  aria-label="Close"
-                  className="shrink-0 text-sage transition-colors hover:text-cream"
-                >
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-                    <path d="M6 6l12 12M18 6L6 18" />
-                  </svg>
-                </button>
+                {!showProgress && (
+                  <button
+                    type="button"
+                    onClick={() => closeModal()}
+                    aria-label="Close"
+                    className="shrink-0 text-sage transition-colors hover:text-cream"
+                  >
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                      <path d="M6 6l12 12M18 6L6 18" />
+                    </svg>
+                  </button>
+                )}
               </div>
 
               {/* Body — scrolls independently */}
               <div className="min-h-0 flex-1 overflow-y-auto px-6 py-5 sm:px-8">
+                {showProgress && activeTask ? (
+                  <ProgressPanel key={activeTask.id} task={activeTask} />
+                ) : (
+                  <>
                 {tasks.length > 0 && (
                   <div className="mb-6 space-y-2.5">
                     <p className={label}>Uploads</p>
@@ -394,25 +457,31 @@ export function UploadFilm() {
                 {fieldError && (
                   <p className="mt-4 text-sm text-brick">{fieldError}</p>
                 )}
+                </>
+                )}
               </div>
 
-              {/* Footer — fixed, actions always visible */}
-              <div className="flex shrink-0 items-center justify-end gap-3 border-t border-line-soft px-6 py-4 sm:px-8">
-                <button
-                  type="button"
-                  onClick={() => closeModal()}
-                  className="rounded-full px-4 py-2.5 text-sm font-medium text-sage transition-colors hover:text-cream"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  onClick={handleQueueUpload}
-                  className="inline-flex items-center justify-center rounded-full bg-amber px-6 py-2.5 text-sm font-medium text-bark transition-all hover:bg-amber/90"
-                >
-                  Start upload
-                </button>
-              </div>
+              {/* Footer — hidden during an in-flight upload (progress panel
+                  owns the only action then: Cancel upload). Restored when the
+                  upload reaches a terminal state. */}
+              {!showProgress && (
+                <div className="flex shrink-0 items-center justify-end gap-3 border-t border-line-soft px-6 py-4 sm:px-8">
+                  <button
+                    type="button"
+                    onClick={() => closeModal()}
+                    className="rounded-full px-4 py-2.5 text-sm font-medium text-sage transition-colors hover:text-cream"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleQueueUpload}
+                    className="inline-flex items-center justify-center rounded-full bg-amber px-6 py-2.5 text-sm font-medium text-bark transition-all hover:bg-amber/90"
+                  >
+                    Start upload
+                  </button>
+                </div>
+              )}
             </div>
           </div>
           </>,

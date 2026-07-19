@@ -54,6 +54,14 @@ export function startFilmUpload(
   return id;
 }
 
+/** Cancels an in-flight upload. Safe to call on terminal tasks (no-op). */
+export function cancelFilmUpload(id: string) {
+  const task = uploadStore.get(id);
+  if (!task) return;
+  if (task.status === "completed" || task.status === "failed") return;
+  task.abort?.();
+}
+
 /** Re-runs a failed task using its own stored fields/files — no re-entry. */
 export function retryFilmUpload(id: string) {
   const task = uploadStore.get(id);
@@ -67,11 +75,25 @@ async function runUpload(id: string) {
   if (!task) return;
   const { fields, videoFile, thumbnailFile } = task;
 
+  const controller = new AbortController();
+  // Wire the controller so cancelFilmUpload() can abort mid-upload. Cleared
+  // once the task reaches a terminal state so nothing holds a dangling ref.
+  uploadStore.patch(id, {
+    abort: () => {
+      if (
+        uploadStore.get(id)?.status !== "completed" &&
+        uploadStore.get(id)?.status !== "failed"
+      ) {
+        controller.abort();
+      }
+    },
+  });
+
   try {
     uploadStore.patch(id, { status: "preparing" });
     const sig = await getUploadSignature();
     if (!sig.ok) {
-      uploadStore.patch(id, { status: "failed", error: sig.error });
+      uploadStore.patch(id, { status: "failed", error: sig.error, abort: undefined });
       return;
     }
     const { signature, timestamp, apiKey, cloudName, folder } = sig.data;
@@ -88,6 +110,7 @@ async function runUpload(id: string) {
       timestamp,
       signature,
       folder,
+      signal: controller.signal,
       onProgress: (loaded, total) => {
         const now = Date.now();
         const dt = (now - lastTime) / 1000;
@@ -114,6 +137,7 @@ async function runUpload(id: string) {
         timestamp,
         signature,
         folder,
+        signal: controller.signal,
       });
       posterUrl = thumbResult.secure_url;
     } else {
@@ -137,16 +161,21 @@ async function runUpload(id: string) {
     });
 
     if (!saved.ok) {
-      uploadStore.patch(id, { status: "failed", error: saved.error });
+      uploadStore.patch(id, { status: "failed", error: saved.error, abort: undefined });
       return;
     }
 
     clearDraftFields();
-    uploadStore.patch(id, { status: "completed", progress: 100 });
+    uploadStore.patch(id, { status: "completed", progress: 100, abort: undefined });
   } catch (err) {
+    if ((err as Error)?.name === "AbortError") {
+      uploadStore.remove(id);
+      return;
+    }
     uploadStore.patch(id, {
       status: "failed",
       error: (err as Error).message || "Upload failed. Please try again.",
+      abort: undefined,
     });
   }
 }

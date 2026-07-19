@@ -19,6 +19,7 @@ export function uploadToCloudinary(params: {
   signature: string;
   folder: string;
   onProgress?: (loadedBytes: number, totalBytes: number) => void;
+  signal?: AbortSignal;
 }): Promise<CloudinaryUploadResponse> {
   return new Promise((resolve, reject) => {
     const form = new FormData();
@@ -57,6 +58,19 @@ export function uploadToCloudinary(params: {
       }
     };
     xhr.onerror = () => reject(new Error("Network error while uploading."));
+
+    const onAbort = () => {
+      xhr.abort();
+      reject(new DOMException("Upload cancelled.", "AbortError"));
+    };
+    if (params.signal) {
+      if (params.signal.aborted) {
+        onAbort();
+        return;
+      }
+      params.signal.addEventListener("abort", onAbort, { once: true });
+    }
+
     xhr.send(form);
   });
 }
