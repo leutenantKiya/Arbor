@@ -4,6 +4,7 @@ import { getDb, schema } from "@/lib/db";
 import { SESSION_COOKIE, SESSION_MAX_AGE_SECONDS, signSession } from "@/lib/auth/session";
 import { verifyParticleUser } from "@/lib/particle/server";
 import { DEV_SEED_BALANCE_SECONDS } from "@/lib/billing";
+import { isUserFilmmaker } from "@/lib/db/queries";
 
 const bodySchema = z.object({
   uuid: z.string().min(1),
@@ -46,9 +47,14 @@ export async function POST(req: Request) {
     walletAddress: user.walletAddress,
   });
 
+  // Client needs this to decide whether /studio requires a full reload
+  // (filmmaker dashboard vs. creator application view) or just a Nav refresh.
+  const isFilmmaker = await isUserFilmmaker(user.id);
+
   const response = NextResponse.json({
     ok: true,
     user: { id: user.id, balanceSeconds: user.balanceSeconds },
+    isFilmmaker,
   });
   response.cookies.set(SESSION_COOKIE, jwt, {
     httpOnly: true,

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   useAccount,
   useDisconnect,
@@ -31,6 +32,14 @@ import {
 //    effect doesn't immediately re-login the user (Particle stays
 //    connected to preserve MPC keys). The flag is cleared when the
 //    user explicitly clicks "Sign in".
+// 5. On successful verify we default to router.refresh() — it re-fetches
+//    the Nav (and current page) as Server Components without unmounting
+//    any client component, so Particle/ConnectKit state survives (unlike
+//    a full navigation). Visually only the navbar changes on most routes.
+//    The one exception is /studio for a filmmaker: that page's entire body
+//    (CreatorApplicationView vs FilmmakerDashboard, plus the one-time
+//    ensureFilmmakerRecord provisioning) is decided server-side from
+//    scratch, so it gets a full reload instead of a soft refresh.
 // ---------------------------------------------------------------------------
 
 const SIGNED_OUT_KEY = "arbor_signed_out";
@@ -47,6 +56,7 @@ function particleInternal(): ParticleInternal | null {
 }
 
 export function AuthButton({ hasSession }: { hasSession: boolean }) {
+  const router = useRouter();
   const { disconnectAsync } = useDisconnect();
   const { isConnected, address, connector } = useAccount();
   const { setOpen } = useModal();
@@ -128,8 +138,20 @@ export function AuthButton({ hasSession }: { hasSession: boolean }) {
         throw new Error(`verify ${res.status}: ${body.slice(0, 200)}`);
       }
 
-      // Soft navigation — full reload would re-trigger Particle churn.
-      window.location.href = window.location.pathname;
+      const { isFilmmaker } = (await res.json()) as { isFilmmaker: boolean };
+
+      // /studio's entire body is decided server-side by filmmaker status —
+      // a soft refresh won't swap CreatorApplicationView for
+      // FilmmakerDashboard, so that one route needs a full reload.
+      if (isFilmmaker && window.location.pathname === "/studio") {
+        window.location.href = window.location.pathname;
+        return;
+      }
+
+      // Everywhere else: refresh Server Components (Nav picks up the new
+      // session) without unmounting client components — Particle/ConnectKit
+      // state survives, unlike a full navigation.
+      router.refresh();
     } catch (err) {
       console.error("[AuthButton] verify flow failed:", err);
       setNotice("Sign-in failed — try again.");
