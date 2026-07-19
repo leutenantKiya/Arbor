@@ -1,6 +1,6 @@
 import { AuthButton } from '@/components/auth-button';
 import { PurchaseButton } from '@/components/purchase-button';
-import { GiftForm } from '@/components/gift-form';
+import { GiftTimeModal } from '@/components/gift-time-modal';
 import { getSession } from '@/lib/auth/server';
 import { db } from '@/lib/db/client';
 import { users } from '@/lib/db/schema';
@@ -45,9 +45,14 @@ export default async function TimePage() {
 
       <div className="relative z-10 mx-auto max-w-4xl px-6 pb-24 pt-14">
         <header className="animate-rise">
-          <h1 className="font-display text-4xl font-semibold tracking-tight md:text-5xl">
-            Your time
-          </h1>
+          <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <h1 className="font-display text-4xl font-semibold tracking-tight md:text-5xl">
+              Your time
+            </h1>
+            {session && (
+              <GiftTimeModal initialBalanceSeconds={balanceSeconds ?? 0} />
+            )}
+          </div>
           <p className="mt-3 max-w-[58ch] font-mono text-sm leading-relaxed text-sage">
             Time is only used while a film is playing. Browsing, trailers, and
             pausing are always free. Your balance never runs out on its own.
@@ -135,22 +140,6 @@ export default async function TimePage() {
           Purchases are gasless via Particle Network. USDC is deposited to the
           ArborVault contract — filmmakers are settled daily.
         </p>
-
-        {session && (
-          <div className="mt-12 animate-rise rounded-2xl border border-line bg-surface p-7">
-            <p className="font-mono text-[0.68rem] tracking-[0.14em] text-sage">
-              GIFT TIME
-            </p>
-            <h2 className="mt-2 font-display text-2xl font-semibold">
-              Send time to a friend
-            </h2>
-            <p className="mt-2 text-sm text-sage">
-              Gift viewing time to another Arbor user by entering their wallet
-              address.
-            </p>
-            <GiftForm initialBalanceSeconds={balanceSeconds ?? 0} />
-          </div>
-        )}
       </div>
     </>
   );
