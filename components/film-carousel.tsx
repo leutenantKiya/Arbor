@@ -9,9 +9,28 @@ export function FilmCarousel({ films, reverse = false }: { films: Film[]; revers
   const frameRef = useRef<number | null>(null);
   const positionRef = useRef(0);
   const lastTimeRef = useRef<number | null>(null);
+  const setWidthRef = useRef(0);
   const dragStartRef = useRef({ x: 0, position: 0, moved: false });
+  const [copies, setCopies] = useState(2);
   const [isPaused, setIsPaused] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
+
+  useEffect(() => {
+    const measure = () => {
+      const track = trackRef.current;
+      if (!track || films.length === 0) return;
+      const oneSet = track.scrollWidth / Math.max(copies, 1);
+      if (oneSet <= 0) return;
+      setWidthRef.current = oneSet;
+      const viewport = track.parentElement?.clientWidth ?? window.innerWidth;
+      const needed = Math.ceil((viewport * 2) / oneSet) + 2;
+      setCopies((prev) => (needed > prev ? needed : prev));
+    };
+
+    measure();
+    window.addEventListener("resize", measure);
+    return () => window.removeEventListener("resize", measure);
+  }, [films.length, copies]);
 
   useEffect(() => {
     const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -19,16 +38,16 @@ export function FilmCarousel({ films, reverse = false }: { films: Film[]; revers
 
     const tick = (time: number) => {
       const track = trackRef.current;
-      if (track) {
+      const setWidth = setWidthRef.current;
+      if (track && setWidth > 0) {
         if (lastTimeRef.current !== null && !isPaused && !isDragging && !reduceMotion) {
           positionRef.current += ((time - lastTimeRef.current) / 1000) * speed;
         }
         lastTimeRef.current = time;
-        const halfWidth = track.scrollWidth / 2;
-        if (halfWidth > 0) {
-          positionRef.current = ((positionRef.current % halfWidth) + halfWidth) % halfWidth;
-          track.style.transform = `translate3d(${-positionRef.current}px, 0, 0)`;
-        }
+        const offset = setWidth * (copies > 1 ? 1 : 0);
+        let pos = positionRef.current % setWidth;
+        if (pos < 0) pos += setWidth;
+        track.style.transform = `translate3d(${-(pos + offset)}px, 0, 0)`;
       }
       frameRef.current = requestAnimationFrame(tick);
     };
@@ -37,7 +56,7 @@ export function FilmCarousel({ films, reverse = false }: { films: Film[]; revers
     return () => {
       if (frameRef.current !== null) cancelAnimationFrame(frameRef.current);
     };
-  }, [isDragging, isPaused, reverse]);
+  }, [isDragging, isPaused, reverse, copies]);
 
   function handlePointerDown(event: React.PointerEvent<HTMLDivElement>) {
     const target = event.target as HTMLElement;
@@ -65,7 +84,11 @@ export function FilmCarousel({ films, reverse = false }: { films: Film[]; revers
   return (
     <div
       className={`film-carousel -mx-6 overflow-hidden px-6 ${isDragging ? "cursor-grabbing" : "cursor-grab"}`}
-      onPointerDown={handlePointerDown}
+      style={{ touchAction: "pan-y", userSelect: "none", WebkitUserSelect: "none" }}
+      onPointerDown={(event) => {
+        event.preventDefault();
+        handlePointerDown(event);
+      }}
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}
       onPointerCancel={handlePointerUp}
@@ -85,9 +108,11 @@ export function FilmCarousel({ films, reverse = false }: { films: Film[]; revers
       aria-label="Film carousel. Hover to pause or drag to browse."
     >
       <div ref={trackRef} className="flex w-max gap-4 py-2 sm:gap-[18px]">
-        {[...films, ...films].map((film, index) => (
-          <PosterCard key={`${film.slug}-${index}`} film={film} />
-        ))}
+        {Array.from({ length: copies }).flatMap((_, copyIndex) =>
+          films.map((film, index) => (
+            <PosterCard key={`${copyIndex}-${film.slug}-${index}`} film={film} />
+          )),
+        )}
       </div>
     </div>
   );
