@@ -74,10 +74,13 @@ const APPLICANT_TYPES = [
   { value: "individual", label: "Individual filmmaker" },
   { value: "production_company", label: "Production company" },
 ];
+// Year-range criteria shown next to the selected level — a reasonable
+// industry-convention default (no product spec pins exact numbers yet;
+// adjust freely, it's display-only and never sent to the server).
 const EXPERIENCE_LEVELS = [
-  { value: "beginner", label: "Beginner" },
-  { value: "intermediate", label: "Intermediate" },
-  { value: "professional", label: "Professional" },
+  { value: "beginner", label: "Beginner", years: "0–2 years" },
+  { value: "intermediate", label: "Intermediate", years: "2–5 years" },
+  { value: "professional", label: "Professional", years: "5+ years" },
 ];
 const GENRES = [
   "Drama",
@@ -88,6 +91,50 @@ const GENRES = [
   "Horror",
   "Comedy",
   "Other",
+];
+
+// Standard ISO 3166-1 short English country names, alphabetical.
+const COUNTRIES = [
+  "Afghanistan", "Albania", "Algeria", "Andorra", "Angola",
+  "Antigua and Barbuda", "Argentina", "Armenia", "Australia", "Austria",
+  "Azerbaijan", "Bahamas", "Bahrain", "Bangladesh", "Barbados",
+  "Belarus", "Belgium", "Belize", "Benin", "Bhutan",
+  "Bolivia", "Bosnia and Herzegovina", "Botswana", "Brazil", "Brunei",
+  "Bulgaria", "Burkina Faso", "Burundi", "Cabo Verde", "Cambodia",
+  "Cameroon", "Canada", "Central African Republic", "Chad", "Chile",
+  "China", "Colombia", "Comoros", "Congo (Brazzaville)", "Congo (Kinshasa)",
+  "Costa Rica", "Croatia", "Cuba", "Cyprus", "Czechia",
+  "Denmark", "Djibouti", "Dominica", "Dominican Republic", "Ecuador",
+  "Egypt", "El Salvador", "Equatorial Guinea", "Eritrea", "Estonia",
+  "Eswatini", "Ethiopia", "Fiji", "Finland", "France",
+  "Gabon", "Gambia", "Georgia", "Germany", "Ghana",
+  "Greece", "Grenada", "Guatemala", "Guinea", "Guinea-Bissau",
+  "Guyana", "Haiti", "Honduras", "Hungary", "Iceland",
+  "India", "Indonesia", "Iran", "Iraq", "Ireland",
+  "Israel", "Italy", "Ivory Coast", "Jamaica", "Japan",
+  "Jordan", "Kazakhstan", "Kenya", "Kiribati", "Kuwait",
+  "Kyrgyzstan", "Laos", "Latvia", "Lebanon", "Lesotho",
+  "Liberia", "Libya", "Liechtenstein", "Lithuania", "Luxembourg",
+  "Madagascar", "Malawi", "Malaysia", "Maldives", "Mali",
+  "Malta", "Marshall Islands", "Mauritania", "Mauritius", "Mexico",
+  "Micronesia", "Moldova", "Monaco", "Mongolia", "Montenegro",
+  "Morocco", "Mozambique", "Myanmar", "Namibia", "Nauru",
+  "Nepal", "Netherlands", "New Zealand", "Nicaragua", "Niger",
+  "Nigeria", "North Korea", "North Macedonia", "Norway", "Oman",
+  "Pakistan", "Palau", "Palestine", "Panama", "Papua New Guinea",
+  "Paraguay", "Peru", "Philippines", "Poland", "Portugal",
+  "Qatar", "Romania", "Russia", "Rwanda", "Saint Kitts and Nevis",
+  "Saint Lucia", "Saint Vincent and the Grenadines", "Samoa", "San Marino",
+  "Sao Tome and Principe", "Saudi Arabia", "Senegal", "Serbia",
+  "Seychelles", "Sierra Leone", "Singapore", "Slovakia", "Slovenia",
+  "Solomon Islands", "Somalia", "South Africa", "South Korea",
+  "South Sudan", "Spain", "Sri Lanka", "Sudan", "Suriname",
+  "Sweden", "Switzerland", "Syria", "Taiwan", "Tajikistan",
+  "Tanzania", "Thailand", "Timor-Leste", "Togo", "Tonga",
+  "Trinidad and Tobago", "Tunisia", "Turkey", "Turkmenistan", "Tuvalu",
+  "Uganda", "Ukraine", "United Arab Emirates", "United Kingdom",
+  "United States", "Uruguay", "Uzbekistan", "Vanuatu", "Vatican City",
+  "Venezuela", "Vietnam", "Yemen", "Zambia", "Zimbabwe",
 ];
 
 type StoredDraft = { step: number; data: FormData };
@@ -117,7 +164,7 @@ function readDraft(): StoredDraft | null {
 const isEmail = (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim());
 const isWallet = (v: string) => /^0x[a-fA-F0-9]{40}$/.test(v.trim());
 
-export function ApplyCreator() {
+export function ApplyCreator({ hasApplied }: { hasApplied: boolean }) {
   const [open, setOpen] = useState(false);
   const [step, setStep] = useState(0);
   const [data, setData] = useState<FormData>(EMPTY);
@@ -312,18 +359,20 @@ export function ApplyCreator() {
           ref={triggerRef}
           type="button"
           onClick={openModal}
-          className="inline-flex items-center justify-center rounded-full bg-amber px-5 py-2.5 text-sm font-medium text-bark transition-all hover:bg-amber/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber"
+          disabled={hasApplied}
+          className="inline-flex items-center justify-center rounded-full bg-amber px-5 py-2.5 text-sm font-medium text-bark transition-all hover:bg-amber/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber disabled:cursor-not-allowed disabled:bg-amber/15 disabled:text-amber-soft/50 disabled:hover:bg-amber/15"
         >
-          Apply as Creator
+          {hasApplied ? "Application submitted" : "Apply as Creator"}
         </button>
         <p className="text-sm text-sage">
-          Ready to publish your films on Arbor? Apply to become a verified
-          creator.
+          {hasApplied
+            ? "We've received your application — we'll be in touch."
+            : "Ready to publish your films on Arbor? Apply to become a verified creator."}
         </p>
       </div>
 
       {/* ── Modal ─────────────────────────────────────────────────────── */}
-      {open && (
+      {open && !hasApplied && (
         <div
           className="animate-backdrop-in fixed inset-0 z-50 flex items-end justify-center bg-bark/80 p-4 backdrop-blur-md sm:items-center"
           onMouseDown={(e) => {
@@ -419,13 +468,17 @@ export function ApplyCreator() {
                     </div>
                     <div>
                       <label className={label} htmlFor="ac-country">Country / region</label>
-                      <input
+                      <select
                         id="ac-country"
-                        className={field}
+                        className={`${field} appearance-none`}
                         value={data.country}
                         onChange={(e) => set("country", e.target.value)}
-                        placeholder="Indonesia"
-                      />
+                      >
+                        <option value="" disabled>Select…</option>
+                        {COUNTRIES.map((c) => (
+                          <option key={c} value={c}>{c}</option>
+                        ))}
+                      </select>
                     </div>
                     <div>
                       <label className={label} htmlFor="ac-type">Applying as</label>
@@ -480,7 +533,20 @@ export function ApplyCreator() {
                       </div>
                     </div>
                     <div>
-                      <label className={label} htmlFor="ac-exp">Filmmaking experience</label>
+                      <div className="mb-1.5 flex items-baseline justify-between gap-3">
+                        <label className={`${label} mb-0`} htmlFor="ac-exp">
+                          Filmmaking experience
+                        </label>
+                        {data.experience !== "" && (
+                          <span className="shrink-0 font-mono text-[0.62rem] uppercase tracking-[0.1em] text-ink-faint">
+                            {
+                              EXPERIENCE_LEVELS.find(
+                                (x) => x.value === data.experience,
+                              )?.years
+                            }
+                          </span>
+                        )}
+                      </div>
                       <select
                         id="ac-exp"
                         className={`${field} appearance-none`}

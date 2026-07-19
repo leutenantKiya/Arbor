@@ -11,9 +11,11 @@ import { FilmEarningsTable } from "@/components/film-earnings-table";
 export function CreatorApplicationView({
   earnings,
   filmmakerBalances,
+  hasApplied,
 }: {
   earnings: FilmEarning[];
   filmmakerBalances: FilmmakerBalance[];
+  hasApplied: boolean;
 }) {
   const totalCents = earnings.reduce((a, b) => a + b.totalCents, 0);
   const totalSeconds = earnings.reduce((a, b) => a + b.totalSeconds, 0);
@@ -32,7 +34,7 @@ export function CreatorApplicationView({
       </p>
 
       {/* Primary CTA — become a creator */}
-      <ApplyCreator />
+      <ApplyCreator hasApplied={hasApplied} />
 
       {/* Summary cards */}
       <div className="mt-8 grid gap-5 sm:grid-cols-2">

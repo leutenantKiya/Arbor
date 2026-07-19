@@ -22,7 +22,7 @@ async function main() {
 
   const hash = await wallet.sendTransaction({
     to: L1_BRIDGE,
-    value: parseEther("0.02"),
+    value: parseEther("0.03"),
     gas: 300000n,
   });
   console.log("bridge tx:", hash);

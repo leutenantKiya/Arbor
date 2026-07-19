@@ -46,6 +46,8 @@ const SIGNED_OUT_KEY = "arbor_signed_out";
 
 type ParticleInternal = {
   getUserInfo?: () => { uuid: string; token: string } | null;
+  needRestoreWallet?: () => boolean;
+  openRestoreByMasterPassword?: () => void;
 };
 
 function particleInternal(): ParticleInternal | null {
@@ -107,6 +109,20 @@ export function AuthButton({ hasSession }: { hasSession: boolean }) {
       for (let attempt = 0; attempt < 40 && !info; attempt++) {
         const internal = particleInternal();
         if (internal) {
+          // disconnectAsync() on sign-out wipes the local MPC key fragment
+          // (see note 2 above) — the very next login on THIS device then
+          // needs the master-password restore flow before getUserInfo()
+          // can ever return anything. Without this check the loop below
+          // just times out, disconnects again, and the restore requirement
+          // never clears — every subsequent login repeats the same 20s
+          // dead-end forever. Regression history: this check has been
+          // dropped twice already by unrelated rewrites of this file
+          // (see git blame) — do not remove it again without replacing it.
+          if (internal.needRestoreWallet?.()) {
+            internal.openRestoreByMasterPassword?.();
+            setNotice("Finish the wallet restore, then click Sign in again.");
+            return;
+          }
           try {
             info = internal.getUserInfo?.() ?? null;
           } catch {

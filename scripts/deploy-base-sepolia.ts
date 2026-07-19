@@ -18,7 +18,7 @@ import { privateKeyToAccount } from "viem/accounts";
 import { baseSepolia } from "viem/chains";
 
 // Smart account of the existing test user (from Particle) — gets seed USDC.
-const TEST_SMART_ACCOUNT = "0xB4164F4cf1adc343416b905D767100c4C13020f2";
+const TEST_SMART_ACCOUNT = "0x8CeA68b472E658882dbF4E4b4Bd1038EF6613E7A";
 const SEED_USDC = 1_000_000_000n; // 1000 USDC (6 decimals)
 
 function compile() {

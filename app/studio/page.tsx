@@ -3,6 +3,7 @@ import {
   getFilmEarnings,
   getFilmmakerBalances,
   isUserFilmmaker,
+  hasExistingApplication,
 } from "@/lib/db/queries";
 import { ensureFilmmakerRecord } from "@/lib/services/filmmaker.service";
 import { CreatorApplicationView } from "@/components/creator-application-view";
@@ -35,15 +36,17 @@ export default async function StudioPage() {
     );
   }
 
-  const [earnings, filmmakerBalances] = await Promise.all([
+  const [earnings, filmmakerBalances, hasApplied] = await Promise.all([
     getFilmEarnings(),
     getFilmmakerBalances(),
+    session ? hasExistingApplication(session.userId) : false,
   ]);
 
   return (
     <CreatorApplicationView
       earnings={earnings}
       filmmakerBalances={filmmakerBalances}
+      hasApplied={hasApplied}
     />
   );
 }

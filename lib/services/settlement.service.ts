@@ -48,9 +48,14 @@ export type SettlementResult =
  * 5. Confirm and mark completed
  */
 export async function runSettlement(): Promise<SettlementResult> {
+  console.log("[shutil] -> Sini masuk");
+
   // ── Retry stuck settlements first ───────────────────────────────────
   const stuck = await retryPendingSettlements();
-  if (stuck) return stuck;
+  if (stuck) {
+    console.log("[shutil] raiso:", JSON.stringify(stuck));
+    return stuck;
+  }
 
   // ── Phase 1: DB snapshot ────────────────────────────────────────────
   const eligible = await db
@@ -63,6 +68,11 @@ export async function runSettlement(): Promise<SettlementResult> {
     .from(filmmakers)
     .where(gt(filmmakers.pendingCents, MIN_PAYOUT_CENTS - 1));
 
+  console.log(`[Shutil] nemu mas ${eligible.length} filmmaker tresholds (${MIN_PAYOUT_CENTS} cents)`);
+  eligible.forEach((f) =>
+    console.log(`  → ${f.name} | wallet: ${f.walletAddress} | pending: ${f.pendingCents} cents iki iso`)
+  );
+
   // Filter out filmmakers with zero/placeholder wallets
   const payable = eligible.filter(
     (f) =>
@@ -71,10 +81,12 @@ export async function runSettlement(): Promise<SettlementResult> {
   );
 
   if (payable.length === 0) {
-    return { ok: false, reason: "No filmmakers eligible for settlement" };
+    console.log("[shutil] nope)");
+    return { ok: false, reason: "Nope, LOL" };
   }
 
   const totalCents = payable.reduce((sum, f) => sum + f.pendingCents, 0);
+  console.log(`[shutil] bayar: ${totalCents} cents ($${(totalCents / 100).toFixed(2)}) across ${payable.length} filmmaker(s)`);
 
   // Create settlement + items + zero accruals in one atomic CTE.
   // neon-http supports chained CTEs as a single implicit transaction.
@@ -121,8 +133,11 @@ export async function runSettlement(): Promise<SettlementResult> {
 
   const settlementId = (settlementResult.rows[0] as { id: string })?.id;
   if (!settlementId) {
+    console.error("[settlement] ❌ Failed to create settlement record in DB");
     return { ok: false, reason: "Failed to create settlement record" };
   }
+
+  console.log(`[settlement] ✅ Phase 1 done — settlement ${settlementId} created in DB`);
 
   // ── Phase 2: On-chain execution ─────────────────────────────────────
   return executeSettlementOnChain(settlementId, payable);
@@ -140,6 +155,8 @@ async function executeSettlementOnChain(
     pendingCents: number;
   }>,
 ): Promise<SettlementResult> {
+  console.log(`[settlement] ⛓ Phase 2 — executing on-chain for settlement ${settlementId}`);
+
   const releaseItems: ReleaseItem[] = items.map((f) => ({
     wallet: f.walletAddress as `0x${string}`,
     amountCents: f.pendingCents,
@@ -147,8 +164,15 @@ async function executeSettlementOnChain(
 
   const totalCents = items.reduce((sum, f) => sum + f.pendingCents, 0);
 
+  console.log(`[settlement] 📦 releaseBatch args:`);
+  releaseItems.forEach((item, i) =>
+    console.log(`  [${i}] wallet: ${item.wallet} | amount: ${item.amountCents} cents`)
+  );
+
   try {
+    console.log(`[settlement] 🚀 Sending releaseBatch transaction...`);
     const { txHash } = await releaseBatch(settlementId, releaseItems);
+    console.log(`[settlement] ✅ Transaction sent! txHash: ${txHash}`);
 
     // Store txHash immediately (crash between here and confirmation =
     // recoverable: we have the hash to check on retry)
@@ -157,11 +181,14 @@ async function executeSettlementOnChain(
       SET tx_hash = ${txHash}
       WHERE id = ${settlementId}
     `);
+    console.log(`[settlement] 💾 txHash saved to DB`);
 
     // Verify the BatchReleased event
+    console.log(`[settlement] 🔍 Checking for BatchReleased event...`);
     const batchEvent = await getBatchReleasedFromTx(txHash);
     if (!batchEvent) {
       // Tx confirmed but no event — contract may have reverted silently
+      console.error(`[settlement] ❌ No BatchReleased event found — tx may have reverted silently`);
       await db.execute(sql`
         UPDATE settlements
         SET status = 'failed'
@@ -169,6 +196,7 @@ async function executeSettlementOnChain(
       `);
       return { ok: false, reason: "Settlement tx confirmed but no BatchReleased event" };
     }
+    console.log(`[settlement] ✅ BatchReleased event confirmed on-chain`);
 
     // Mark settlement as completed
     await db.execute(sql`
@@ -184,6 +212,12 @@ async function executeSettlementOnChain(
       SET status = 'paid'
       WHERE settlement_id = ${settlementId}
     `);
+
+    console.log(`[settlement] 🎉 Settlement COMPLETE!`);
+    console.log(`  → settlementId: ${settlementId}`);
+    console.log(`  → txHash: ${txHash}`);
+    console.log(`  → totalCents: ${totalCents} ($${(totalCents / 100).toFixed(2)})`);
+    console.log(`  → filmmakerCount: ${items.length}`);
 
     return {
       ok: true,

@@ -3,6 +3,7 @@
 import { db } from '@/lib/db/client';
 import { applications } from '@/lib/db/schema';
 import { getSession } from '@/lib/auth/session';
+import { hasExistingApplication } from '@/lib/db/queries';
 
 // Shape the client sends to the Server Action. Booleans are semantic here; the
 // action maps them to the "yes"/"no" varchar values the applications table
@@ -100,6 +101,16 @@ export async function submitCreatorApplication(
   const session = await getSession();
   if (!session?.userId) {
     return { ok: false, error: 'Please sign in to submit your application.' };
+  }
+
+  // One submission per account — the client also disables the form once
+  // applied, but a Server Action is a public endpoint on its own, so the
+  // real guard has to live here too.
+  if (await hasExistingApplication(session.userId)) {
+    return {
+      ok: false,
+      error: 'You have already submitted a creator application.',
+    };
   }
 
   try {

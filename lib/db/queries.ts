@@ -8,6 +8,7 @@ import {
   users,
   settlements,
   settlementItems,
+  applications,
 } from './schema';
 import type { Film } from '@/lib/films';
 
@@ -178,6 +179,17 @@ export async function isUserFilmmaker(userId: string): Promise<boolean> {
     .where(eq(users.id, userId))
     .limit(1);
   return row?.isFilmmaker === '1';
+}
+
+// Any row at all counts — one submission per account, regardless of how the
+// application is later reviewed (no status column to filter on yet).
+export async function hasExistingApplication(userId: string): Promise<boolean> {
+  const [row] = await db
+    .select({ id: applications.id })
+    .from(applications)
+    .where(eq(applications.userId, userId))
+    .limit(1);
+  return row !== undefined;
 }
 
 // ── Per-filmmaker scoped queries (Filmmaker Dashboard) ──────────────────
