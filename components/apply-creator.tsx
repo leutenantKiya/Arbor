@@ -41,6 +41,7 @@ type FormData = {
   hasReleasedWorkBefore: YesNo;
   experience: string;
   consideredGenre: string;
+  consideredGenreOther: string;
   shortBio: string;
   portfolioLinks: string;
   previousFilmsLink: string;
@@ -60,6 +61,7 @@ const EMPTY: FormData = {
   hasReleasedWorkBefore: "",
   experience: "",
   consideredGenre: "",
+  consideredGenreOther: "",
   shortBio: "",
   portfolioLinks: "",
   previousFilmsLink: "",
@@ -78,9 +80,9 @@ const APPLICANT_TYPES = [
 // industry-convention default (no product spec pins exact numbers yet;
 // adjust freely, it's display-only and never sent to the server).
 const EXPERIENCE_LEVELS = [
-  { value: "beginner", label: "Beginner", years: "0–2 years" },
-  { value: "intermediate", label: "Intermediate", years: "2–5 years" },
-  { value: "professional", label: "Professional", years: "5+ years" },
+  { value: "beginner", label: "Beginner", years: "Less than 5 years" },
+  { value: "intermediate", label: "Intermediate", years: "5-10 years" },
+  { value: "professional", label: "Professional", years: "More than 10 years" },
 ];
 const GENRES = [
   "Drama",
@@ -306,7 +308,10 @@ export function ApplyCreator({ hasApplied }: { hasApplied: boolean }) {
         coOwnerFullName: data.coOwnerFullName,
         hasReleasedWorkBefore: data.hasReleasedWorkBefore === "yes",
         experience: data.experience,
-        consideredGenre: data.consideredGenre,
+        consideredGenre:
+          data.consideredGenre === "Other"
+            ? data.consideredGenreOther.trim() || "Other"
+            : data.consideredGenre,
         shortBio: data.shortBio,
         portfolioLinks: data.portfolioLinks,
         previousFilmsLink: data.previousFilmsLink,
@@ -537,27 +542,36 @@ export function ApplyCreator({ hasApplied }: { hasApplied: boolean }) {
                         <label className={`${label} mb-0`} htmlFor="ac-exp">
                           Filmmaking experience
                         </label>
-                        {data.experience !== "" && (
-                          <span className="shrink-0 font-mono text-[0.62rem] uppercase tracking-[0.1em] text-ink-faint">
-                            {
-                              EXPERIENCE_LEVELS.find(
-                                (x) => x.value === data.experience,
-                              )?.years
-                            }
-                          </span>
-                        )}
                       </div>
-                      <select
+                      <div
                         id="ac-exp"
-                        className={`${field} appearance-none`}
-                        value={data.experience}
-                        onChange={(e) => set("experience", e.target.value)}
+                        role="radiogroup"
+                        aria-label="Filmmaking experience"
+                        className="flex flex-col gap-2"
                       >
-                        <option value="" disabled>Select…</option>
-                        {EXPERIENCE_LEVELS.map((x) => (
-                          <option key={x.value} value={x.value}>{x.label}</option>
-                        ))}
-                      </select>
+                        {EXPERIENCE_LEVELS.map((x) => {
+                          const selected = data.experience === x.value;
+                          return (
+                            <button
+                              type="button"
+                              role="radio"
+                              aria-checked={selected}
+                              key={x.value}
+                              onClick={() => set("experience", x.value)}
+                              className={`flex w-full items-center justify-between gap-3 rounded-lg border px-3 py-2.5 text-left transition-colors ${
+                                selected
+                                  ? "border-amber bg-amber/10 text-cream"
+                                  : "border-line bg-bark text-sage hover:text-cream"
+                              }`}
+                            >
+                              <span className="text-sm">{x.label}</span>
+                              <span className="shrink-0 text-right text-xs text-ink-faint">
+                                {x.years}
+                              </span>
+                            </button>
+                          );
+                        })}
+                      </div>
                     </div>
                     <div>
                       <label className={label} htmlFor="ac-genre">
@@ -567,13 +581,28 @@ export function ApplyCreator({ hasApplied }: { hasApplied: boolean }) {
                         id="ac-genre"
                         className={`${field} appearance-none`}
                         value={data.consideredGenre}
-                        onChange={(e) => set("consideredGenre", e.target.value)}
+                        onChange={(e) => {
+                          set("consideredGenre", e.target.value);
+                          if (e.target.value !== "Other") {
+                            set("consideredGenreOther", "");
+                          }
+                        }}
                       >
                         <option value="">Select a genre…</option>
                         {GENRES.map((g) => (
                           <option key={g} value={g}>{g}</option>
                         ))}
                       </select>
+                      {data.consideredGenre === "Other" && (
+                        <input
+                          id="ac-genre-other"
+                          className={`${field} mt-2`}
+                          value={data.consideredGenreOther}
+                          onChange={(e) => set("consideredGenreOther", e.target.value)}
+                          placeholder="Tell us your genre"
+                          maxLength={200}
+                        />
+                      )}
                     </div>
                     <div>
                       <label className={label} htmlFor="ac-portfolio">

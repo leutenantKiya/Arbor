@@ -35,6 +35,7 @@ export type UploadTask = {
   videoFile: File;
   thumbnailFile: File | null;
   createdAt: number;
+  abort?: () => void;
 };
 
 type Listener = () => void;
