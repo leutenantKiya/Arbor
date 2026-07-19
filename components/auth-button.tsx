@@ -37,8 +37,6 @@ const SIGNED_OUT_KEY = "arbor_signed_out";
 
 type ParticleInternal = {
   getUserInfo?: () => { uuid: string; token: string } | null;
-  needRestoreWallet?: () => boolean;
-  openRestoreByMasterPassword?: () => void;
 };
 
 function particleInternal(): ParticleInternal | null {
@@ -99,15 +97,6 @@ export function AuthButton({ hasSession }: { hasSession: boolean }) {
       for (let attempt = 0; attempt < 40 && !info; attempt++) {
         const internal = particleInternal();
         if (internal) {
-          // disconnectAsync() on sign-out wipes the local MPC key fragment
-          // (see note 2 above) — the very next login on this device needs
-          // the master-password restore flow. getUserInfo() would just
-          // stay null forever otherwise, so check this before polling.
-          if (internal.needRestoreWallet?.()) {
-            internal.openRestoreByMasterPassword?.();
-            setNotice("Finish the wallet restore, then click Sign in again.");
-            return;
-          }
           try {
             info = internal.getUserInfo?.() ?? null;
           } catch {
@@ -168,6 +157,17 @@ export function AuthButton({ hasSession }: { hasSession: boolean }) {
   function handleSignIn() {
     setNotice(null);
     sessionStorage.removeItem(SIGNED_OUT_KEY);
+    // Particle can already be connected here (e.g. the previous verify
+    // attempt failed without disconnecting — see the generic catch in
+    // runVerifyFlow) while we still have no server session. Reopening the
+    // connect modal does nothing in that case — ConnectKit has no fresh
+    // OAuth step to run since it already considers the wallet connected —
+    // so the "Sign in" button would look like a dead end. Retry the verify
+    // directly instead; only fall back to the modal when truly disconnected.
+    if (isConnected && address) {
+      void runVerifyFlow(address);
+      return;
+    }
     setOpen(true);
   }
 
