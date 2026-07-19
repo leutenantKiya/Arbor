@@ -78,9 +78,9 @@ const APPLICANT_TYPES = [
 // industry-convention default (no product spec pins exact numbers yet;
 // adjust freely, it's display-only and never sent to the server).
 const EXPERIENCE_LEVELS = [
-  { value: "beginner", label: "Beginner", years: "0–2 years" },
-  { value: "intermediate", label: "Intermediate", years: "2–5 years" },
-  { value: "professional", label: "Professional", years: "5+ years" },
+  { value: "beginner", label: "Beginner", years: "Less than 5 years" },
+  { value: "intermediate", label: "Intermediate", years: "5-10 years" },
+  { value: "professional", label: "Professional", years: "More than 10 years" },
 ];
 const GENRES = [
   "Drama",
@@ -537,27 +537,36 @@ export function ApplyCreator({ hasApplied }: { hasApplied: boolean }) {
                         <label className={`${label} mb-0`} htmlFor="ac-exp">
                           Filmmaking experience
                         </label>
-                        {data.experience !== "" && (
-                          <span className="shrink-0 font-mono text-[0.62rem] uppercase tracking-[0.1em] text-ink-faint">
-                            {
-                              EXPERIENCE_LEVELS.find(
-                                (x) => x.value === data.experience,
-                              )?.years
-                            }
-                          </span>
-                        )}
                       </div>
-                      <select
+                      <div
                         id="ac-exp"
-                        className={`${field} appearance-none`}
-                        value={data.experience}
-                        onChange={(e) => set("experience", e.target.value)}
+                        role="radiogroup"
+                        aria-label="Filmmaking experience"
+                        className="flex flex-col gap-2"
                       >
-                        <option value="" disabled>Select…</option>
-                        {EXPERIENCE_LEVELS.map((x) => (
-                          <option key={x.value} value={x.value}>{x.label}</option>
-                        ))}
-                      </select>
+                        {EXPERIENCE_LEVELS.map((x) => {
+                          const selected = data.experience === x.value;
+                          return (
+                            <button
+                              type="button"
+                              role="radio"
+                              aria-checked={selected}
+                              key={x.value}
+                              onClick={() => set("experience", x.value)}
+                              className={`flex w-full items-center justify-between gap-3 rounded-lg border px-3 py-2.5 text-left transition-colors ${
+                                selected
+                                  ? "border-amber bg-amber/10 text-cream"
+                                  : "border-line bg-bark text-sage hover:text-cream"
+                              }`}
+                            >
+                              <span className="text-sm">{x.label}</span>
+                              <span className="shrink-0 text-right text-xs text-ink-faint">
+                                {x.years}
+                              </span>
+                            </button>
+                          );
+                        })}
+                      </div>
                     </div>
                     <div>
                       <label className={label} htmlFor="ac-genre">
