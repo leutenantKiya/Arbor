@@ -41,6 +41,7 @@ type FormData = {
   hasReleasedWorkBefore: YesNo;
   experience: string;
   consideredGenre: string;
+  consideredGenreOther: string;
   shortBio: string;
   portfolioLinks: string;
   previousFilmsLink: string;
@@ -60,6 +61,7 @@ const EMPTY: FormData = {
   hasReleasedWorkBefore: "",
   experience: "",
   consideredGenre: "",
+  consideredGenreOther: "",
   shortBio: "",
   portfolioLinks: "",
   previousFilmsLink: "",
@@ -306,7 +308,10 @@ export function ApplyCreator({ hasApplied }: { hasApplied: boolean }) {
         coOwnerFullName: data.coOwnerFullName,
         hasReleasedWorkBefore: data.hasReleasedWorkBefore === "yes",
         experience: data.experience,
-        consideredGenre: data.consideredGenre,
+        consideredGenre:
+          data.consideredGenre === "Other"
+            ? data.consideredGenreOther.trim() || "Other"
+            : data.consideredGenre,
         shortBio: data.shortBio,
         portfolioLinks: data.portfolioLinks,
         previousFilmsLink: data.previousFilmsLink,
@@ -576,13 +581,28 @@ export function ApplyCreator({ hasApplied }: { hasApplied: boolean }) {
                         id="ac-genre"
                         className={`${field} appearance-none`}
                         value={data.consideredGenre}
-                        onChange={(e) => set("consideredGenre", e.target.value)}
+                        onChange={(e) => {
+                          set("consideredGenre", e.target.value);
+                          if (e.target.value !== "Other") {
+                            set("consideredGenreOther", "");
+                          }
+                        }}
                       >
                         <option value="">Select a genre…</option>
                         {GENRES.map((g) => (
                           <option key={g} value={g}>{g}</option>
                         ))}
                       </select>
+                      {data.consideredGenre === "Other" && (
+                        <input
+                          id="ac-genre-other"
+                          className={`${field} mt-2`}
+                          value={data.consideredGenreOther}
+                          onChange={(e) => set("consideredGenreOther", e.target.value)}
+                          placeholder="Tell us your genre"
+                          maxLength={200}
+                        />
+                      )}
                     </div>
                     <div>
                       <label className={label} htmlFor="ac-portfolio">
