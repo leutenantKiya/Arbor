@@ -65,7 +65,11 @@ export function FilmCarousel({ films, reverse = false }: { films: Film[]; revers
   return (
     <div
       className={`film-carousel -mx-6 overflow-hidden px-6 ${isDragging ? "cursor-grabbing" : "cursor-grab"}`}
-      onPointerDown={handlePointerDown}
+      style={{ touchAction: "pan-y", userSelect: "none", WebkitUserSelect: "none" }}
+      onPointerDown={(event) => {
+        event.preventDefault();
+        handlePointerDown(event);
+      }}
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}
       onPointerCancel={handlePointerUp}
