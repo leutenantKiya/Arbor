@@ -8,6 +8,7 @@ import {
   useModal,
   useSmartAccount,
 } from "@particle-network/connectkit";
+import { ProfileDialog } from "./profile-dialog";
 
 // ---------------------------------------------------------------------------
 // Design notes (read before touching this file)
@@ -57,7 +58,15 @@ function particleInternal(): ParticleInternal | null {
   return w.particle?._internal ?? null;
 }
 
-export function AuthButton({ hasSession }: { hasSession: boolean }) {
+export function AuthButton({
+  hasSession,
+  initialBalanceSeconds = 0,
+  initialSocialId = "",
+}: {
+  hasSession: boolean;
+  initialBalanceSeconds?: number;
+  initialSocialId?: string;
+}) {
   const router = useRouter();
   const { disconnectAsync } = useDisconnect();
   const { isConnected, address, connector } = useAccount();
@@ -224,14 +233,13 @@ export function AuthButton({ hasSession }: { hasSession: boolean }) {
 
   if (isConnected && hasSession) {
     return (
-      <button
-        type="button"
-        onClick={handleSignOut}
-        disabled={busy}
-        className="rounded-full bg-cream px-4 py-1.5 text-sm font-medium text-bark transition-opacity hover:opacity-90 disabled:opacity-60"
-      >
-        {busy ? "Signing out…" : "Sign out"}
-      </button>
+      <ProfileDialog
+        walletAddress={address ?? ""}
+        onSignOut={handleSignOut}
+        busy={busy}
+        initialBalanceSeconds={initialBalanceSeconds}
+        initialSocialId={initialSocialId}
+      />
     );
   }
 

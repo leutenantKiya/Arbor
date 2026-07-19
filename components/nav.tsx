@@ -13,14 +13,14 @@ import { getUsdcBalance } from "@/lib/blockchain/usdc";
 import { formatUsdcAmount } from "@/lib/blockchain/utils";
 import { getFilms } from "@/lib/db/queries";
 
-async function getUserBalance(userId: string): Promise<number | null> {
+async function getUserData(userId: string): Promise<{ balanceSeconds: number | null; socialId: string | null } | null> {
   try {
     const [user] = await db
-      .select({ balanceSeconds: users.balanceSeconds })
+      .select({ balanceSeconds: users.balanceSeconds, socialId: users.socialId })
       .from(users)
       .where(eq(users.id, userId))
       .limit(1);
-    return user?.balanceSeconds ?? null;
+    return user ? { balanceSeconds: user.balanceSeconds, socialId: user.socialId } : null;
   } catch {
     return null;
   }
@@ -31,7 +31,9 @@ export async function Nav() {
     getSession(),
     getFilms().catch(() => []),
   ]);
-  const balance = session ? await getUserBalance(session.userId) : null;
+  const userData = session ? await getUserData(session.userId) : null;
+  const balance = userData?.balanceSeconds ?? null;
+  const socialId = userData?.socialId ?? null;
 
   let usdcBalance: string | null = null;
   if (session?.walletAddress && session.walletAddress !== "0x0000000000000000000000000000000000000000") {
@@ -80,7 +82,11 @@ export async function Nav() {
             </Link>
           )}
           {/* Sign in / sign out — Particle connectkit, both states */}
-          <AuthButton hasSession={!!session} />
+          <AuthButton
+            hasSession={!!session}
+            initialBalanceSeconds={balance ?? 0}
+            initialSocialId={socialId ?? ""}
+          />
         </div>
       </div>
     </header>

@@ -15,15 +15,45 @@ export async function POST(request: Request) {
 
   let recipientWalletAddress: unknown;
   let seconds: unknown;
+  let socialId: unknown;
   try {
-    ({ recipientWalletAddress, seconds } = await request.json());
+    ({ recipientWalletAddress, seconds, socialId } = await request.json());
   } catch {
     return NextResponse.json({ error: "invalid_body" }, { status: 400 });
   }
 
-  if (typeof recipientWalletAddress !== "string" || !WALLET_RE.test(recipientWalletAddress.trim())) {
-    return NextResponse.json({ error: "invalid_wallet" }, { status: 400 });
+  // Social ID resolution: @username → wallet address
+  if (typeof socialId === "string" && socialId.trim()) {
+    const normalized = socialId.replace(/^@/, "").trim().toLowerCase();
+    if (!normalized) {
+      return NextResponse.json({ error: "invalid_social_id", message: "Arbor ID not found. Check the username and try again." }, { status: 400 });
+    }
+    const [resolved] = await db
+      .select({ walletAddress: users.walletAddress })
+      .from(users)
+      .where(eq(users.socialId, normalized))
+      .limit(1);
+    if (!resolved) {
+      return NextResponse.json({ error: "social_id_not_found", message: "Arbor ID not found. Check the username and try again." }, { status: 404 });
+    }
+    recipientWalletAddress = resolved.walletAddress;
   }
+
+  if (typeof recipientWalletAddress !== "string" || !WALLET_RE.test(recipientWalletAddress.trim())) {
+    return NextResponse.json({ error: "invalid_wallet", message: "Invalid wallet address." }, { status: 400 });
+  }
+
+  // Self-gifting protection via wallet address comparison
+  const [currentUser] = await db
+    .select({ walletAddress: users.walletAddress })
+    .from(users)
+    .where(eq(users.id, session.userId))
+    .limit(1);
+
+  if (currentUser && recipientWalletAddress && currentUser.walletAddress.toLowerCase() === (recipientWalletAddress as string).trim().toLowerCase()) {
+    return NextResponse.json({ error: "cannot_gift_to_self", message: "You cannot send viewing time to yourself." }, { status: 400 });
+  }
+
   if (typeof seconds !== "number" || !Number.isInteger(seconds) || seconds <= 0) {
     return NextResponse.json({ error: "invalid_seconds" }, { status: 400 });
   }
@@ -85,10 +115,10 @@ export async function POST(request: Request) {
       .limit(1);
 
     if (!recipient) {
-      return NextResponse.json({ error: "recipient_not_found" }, { status: 404 });
+      return NextResponse.json({ error: "recipient_not_found", message: "Arbor ID or wallet address not found in Arbor." }, { status: 404 });
     }
     if (recipient.id === session.userId) {
-      return NextResponse.json({ error: "cannot_gift_to_self" }, { status: 400 });
+      return NextResponse.json({ error: "cannot_gift_to_self", message: "You cannot send viewing time to yourself." }, { status: 400 });
     }
     const [sender] = await db
       .select({ balanceSeconds: users.balanceSeconds })

@@ -53,6 +53,9 @@ export const users = pgTable(
     // column in the DB. Gates the Studio page: Filmmaker Dashboard vs
     // Creator Application flow.
     isFilmmaker: text("is_filmmaker").default("0"),
+    // Human-readable alias for wallet address (e.g. "kevin").
+    // Always stored lowercase, validated ^[a-z0-9_-]{1,24}$.
+    socialId: text("social_id"),
   },
   (t) => [
     // §8 "Rate abuse": balance can't go negative — enforced in the schema
@@ -62,6 +65,10 @@ export const users = pgTable(
     uniqueIndex("users_account_id_unique")
       .on(t.accountId)
       .where(sql`${t.accountId} is not null`),
+    // Social ID must be unique across all users that have one set
+    uniqueIndex("users_social_id_unique")
+      .on(t.socialId)
+      .where(sql`${t.socialId} is not null`),
   ],
 );
 
