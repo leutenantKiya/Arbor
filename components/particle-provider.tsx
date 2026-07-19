@@ -43,7 +43,14 @@ const config = createConfig({
       authTypes: ["google", "apple", "email"],
       fiatCoin: "USD",
       promptSettingConfig: {
-        promptMasterPasswordSettingWhenLogin: 0,
+        // 1 = prompt the user to set a master password on first login. This
+        // is REQUIRED so that a deliberate sign-out (which calls
+        // disconnectAsync() and wipes the local MPC key fragment) can be
+        // recovered on next login via the "restore wallet" flow. Without it
+        // (was 0) needRestoreWallet() returns true forever and re-login is
+        // impossible. The master password is a one-time setup, not a
+        // per-login prompt.
+        promptMasterPasswordSettingWhenLogin: 1,
         promptPaymentPasswordSettingWhenSign: 0,
       },
     }),

@@ -127,8 +127,19 @@ export function AuthButton({
           // dead-end forever. Regression history: this check has been
           // dropped twice already by unrelated rewrites of this file
           // (see git blame) — do not remove it again without replacing it.
-          if (internal.needRestoreWallet?.()) {
-            internal.openRestoreByMasterPassword?.();
+          //
+          // NOTE: the Particle _internal shape is unstable across SDK
+          // versions — needRestoreWallet is sometimes a non-callable value,
+          // so `internal.needRestoreWallet?.()` throws
+          // "call is not a function". Guard with typeof before calling.
+          const needRestore =
+            typeof internal.needRestoreWallet === "function"
+              ? internal.needRestoreWallet()
+              : false;
+          if (needRestore) {
+            if (typeof internal.openRestoreByMasterPassword === "function") {
+              internal.openRestoreByMasterPassword();
+            }
             setNotice("Finish the wallet restore, then click Sign in again.");
             return;
           }
@@ -221,8 +232,11 @@ export function AuthButton({
   function handleSignOut() {
     setBusy(true);
     sessionStorage.setItem(SIGNED_OUT_KEY, "1");
-    // Fully disconnect Particle + clear server session so next
-    // sign-in shows the modal fresh.
+    // Fully disconnect Particle (wipes the local MPC key fragment) AND clear
+    // the server session cookie, so the next sign-in must go through the
+    // Particle login modal again — required for switching accounts from the
+    // same device. The SIGNED_OUT_KEY guard stops the auto-verify effect from
+    // immediately re-logging-in while signed out.
     Promise.all([
       disconnectAsync().catch(() => {}),
       fetch("/api/auth/logout", { method: "POST" }),
