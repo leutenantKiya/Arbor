@@ -78,7 +78,18 @@ export async function runSettlement(): Promise<SettlementResult> {
 
   // Create settlement + items + zero accruals in one atomic CTE.
   // neon-http supports chained CTEs as a single implicit transaction.
+  //
+  // NOTE: `ANY(${jsArray})` does NOT work with drizzle's sql tag on the
+  // neon-http driver — it binds the array as a single scalar parameter,
+  // so Postgres sees e.g. ANY($2) with $2 = 'uuid-string' and throws
+  // "malformed array literal". sql.join(...) below binds each id as its
+  // own parameter inside an explicit ARRAY[...]::uuid[] literal instead —
+  // fully parameterized, no injection risk, and Postgres-valid.
   const filmmakerIds = payable.map((f) => f.id);
+  const idArray = sql`ARRAY[${sql.join(
+    filmmakerIds.map((id) => sql`${id}`),
+    sql`, `,
+  )}]::uuid[]`;
   const settlementResult = await db.execute(sql`
     WITH new_settlement AS (
       INSERT INTO settlements (total_cents, status)
@@ -94,14 +105,14 @@ export async function runSettlement(): Promise<SettlementResult> {
         f.wallet_address,
         'pending'
       FROM filmmakers f
-      WHERE f.id = ANY(${filmmakerIds})
+      WHERE f.id = ANY(${idArray})
         AND f.pending_cents > 0
       RETURNING settlement_id
     ),
     zero AS (
       UPDATE filmmakers f
       SET pending_cents = 0
-      WHERE f.id = ANY(${filmmakerIds})
+      WHERE f.id = ANY(${idArray})
         AND f.pending_cents > 0
       RETURNING f.id
     )
