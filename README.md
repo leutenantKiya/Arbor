@@ -67,7 +67,7 @@ festival selections — the films streaming giants ignore.
 
 ## Project status
 
-🚧 Hackathon build in progress. See [PLANNING.md](PLANNING.md) for the full
+MVP Created. See [PLANNING.md](PLANNING.md) for the full
 product planning document: vision, personas, UX strategy, architecture,
 business logic, risks, team plan, and demo flow.
 
