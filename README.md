@@ -40,9 +40,9 @@ streamed per second.
 
 ## Features
 
-- 🎬 **Netflix-grade streaming UX** — cinematic catalog, custom player, dark theme
+- 🎬 **Netflix-grade streaming UX** — cinematic catalog, dark theme
 - ⏱️ **Pay-per-viewing-time** — the meter runs only during playback; pause is free
-- 🧘 **Anti-anxiety metering** — a calm remaining-time gauge, never a ticking money counter
+- 🧘 **Anti-anxiety metering** — a calm remaining-time gauge
 - 👋 **Zero-crypto onboarding** — Google login, silent wallet creation, gasless everything
 - 🎁 **Gift time** — transfer viewing hours from your balance to a friend
 - 🎥 **Filmmaker Studio** — live per-second earnings and on-chain settlement proof (Arbiscan)
@@ -53,7 +53,7 @@ streamed per second.
 |---|---|
 | Frontend | React + TypeScript |
 | Wallet & Auth | Particle Network — Universal Accounts, social login, gasless paymaster, EIP-7702 path |
-| Chain | Arbitrum Sepolia (testnet) |
+| Chain | Base Sepolia (testnet) -> into mock USDC |
 | Contract | `ArborVault.sol` — package purchase + batch filmmaker settlement |
 | Ledger | Postgres — balances, sessions, debit events, gift claims, settlements |
 | Content | Blender Foundation & public-domain films (fully licensed-safe catalog) |
@@ -67,7 +67,7 @@ festival selections — the films streaming giants ignore.
 
 ## Project status
 
-🚧 Hackathon build in progress. See [PLANNING.md](PLANNING.md) for the full
+MVP Created. See [PLANNING.md](PLANNING.md) for the full
 product planning document: vision, personas, UX strategy, architecture,
 business logic, risks, team plan, and demo flow.
 
