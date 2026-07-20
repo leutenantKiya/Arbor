@@ -25,6 +25,9 @@ export const metadata: Metadata = {
   title: "Arbor — Pay for what you watch",
   description:
     "Premium streaming for independent cinema. Buy viewing time, not subscriptions — the meter only runs while the film plays.",
+  icons: {
+    icon: "/icon.png",
+  },
 };
 
 export default function RootLayout({
