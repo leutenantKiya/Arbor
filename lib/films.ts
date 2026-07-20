@@ -81,7 +81,7 @@ export const films: Film[] = [
     year: 2015,
     filmmaker: "Colin Levy — Blender Foundation",
     videoUrl:
-      "https://download.blender.org/demo/movies/Cosmos_Laundromat_Short_HQ.mp4",
+      "https://archive.org/download/cosmos-laundromat-first-cycle_202601/Cosmos%20Laundromat%20-%20First%20Cycle.mp4",
     posterUrl: "/posters/cosmos-laundromat.jpg",
   },
   {
@@ -94,7 +94,7 @@ export const films: Film[] = [
     year: 2019,
     filmmaker: "Andrew Huang — Blender Animation Studio",
     videoUrl:
-      "https://download.blender.org/demo/movies/SpringShortFilm.mp4",
+      "https://dn800207.us.archive.org/0/items/spring_blenderopenmovie/Spring%20-%20Blender%20Open%20Movie%20-%20YouTube.mp4",
     posterUrl: "/posters/spring.jpg",
   },
 ];

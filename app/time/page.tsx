@@ -86,9 +86,9 @@ export default async function TimePage() {
             <p className="font-mono text-sm text-sage">
               Sign in to see your balance and add viewing time.
             </p>
-            {/* One auth system only: Particle via the nav button
-                (docs/AUTH-ARCHITECTURE.md) — /auth/sign-in is the parked
-                password path and must not be linked from the UI. */}
+            {/* Single auth system: Particle (via the nav AuthButton or the
+                /auth/login gate). The old email/password mock path has been
+                removed. */}
             <div className="mt-4 flex justify-center">
               <AuthButton hasSession={false} />
             </div>

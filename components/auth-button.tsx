@@ -88,6 +88,19 @@ export function AuthButton({
     if (verifyingRef.current) return;
     verifyingRef.current = true;
     setBusy(true);
+    // Running verify IS the explicit sign-in action (whether triggered by the
+    // nav "Sign in" button, the auto-verify effect after a fresh connect, or
+    // the /auth/login gate after "Start watching"/"Play"). Clear the
+    // post-sign-out guard here so a prior sign-out never blocks THIS login.
+    // (Previously the guard was only cleared in handleSignIn, so the
+    // auto-verify effect stayed blocked after sign-out → runVerifyFlow never
+    // ran → no /api/auth/verify POST → session cookie never set → stuck on
+    // the login gate with no console error.)
+    try {
+      sessionStorage.removeItem(SIGNED_OUT_KEY);
+    } catch {
+      /* ignore */
+    }
 
     try {
       // Resolve the Smart Account address so we record it in the DB instead of the EOA address
@@ -184,9 +197,9 @@ export function AuthButton({
         return;
       }
 
-      // Everywhere else: refresh Server Components (Nav picks up the new
-      // session) without unmounting client components — Particle/ConnectKit
-      // state survives, unlike a full navigation.
+      // Refresh Server Components (Nav picks up the new session) without
+      // unmounting client components — Particle/ConnectKit state survives,
+      // unlike a full navigation.
       router.refresh();
     } catch (err) {
       console.error("[AuthButton] verify flow failed:", err);
@@ -203,8 +216,25 @@ export function AuthButton({
   // ------------------------------------------------------------------
   useEffect(() => {
     if (!isConnected || !address || hasSession) return;
-    // Don't auto-verify after an intentional sign-out.
-    if (sessionStorage.getItem(SIGNED_OUT_KEY)) return;
+    // A fresh Particle connection with no server session = a deliberate
+    // sign-in (via the nav "Sign in" button OR the /auth/login gate after
+    // "Start watching"/"Play"). Clear the post-sign-out guard here so it can
+    // never block THIS login.
+    //
+    // Why here and not only in runVerifyFlow: sign-out now calls
+    // disconnectAsync(), so Particle is disconnected after sign-out and
+    // isConnected stays false until the user explicitly reconnects. The
+    // effect therefore cannot fire spuriously, so clearing the flag on a
+    // genuine new connection is safe. Clearing it ONLY inside runVerifyFlow
+    // was a bug — the guard below returned BEFORE runVerifyFlow ever ran, so
+    // the play-gate path (which relies on this auto-verify effect) was
+    // permanently blocked after any prior sign-out: no POST /api/auth/verify,
+    // stuck on the login gate.
+    try {
+      sessionStorage.removeItem(SIGNED_OUT_KEY);
+    } catch {
+      /* ignore */
+    }
     void runVerifyFlow(address);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isConnected, address, hasSession]);
