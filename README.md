@@ -53,7 +53,7 @@ streamed per second.
 |---|---|
 | Frontend | React + TypeScript |
 | Wallet & Auth | Particle Network — Universal Accounts, social login, gasless paymaster, EIP-7702 path |
-| Chain | Base Sepolia (testnet) |
+| Chain | Base Sepolia (testnet) -> into mock USDC |
 | Contract | `ArborVault.sol` — package purchase + batch filmmaker settlement |
 | Ledger | Postgres — balances, sessions, debit events, gift claims, settlements |
 | Content | Blender Foundation & public-domain films (fully licensed-safe catalog) |
