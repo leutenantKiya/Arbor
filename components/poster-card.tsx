@@ -17,7 +17,7 @@ export function PosterCard({ film }: { film: Film }) {
       <div className="absolute inset-0 bg-[linear-gradient(to_top,rgba(7,8,13,0.96)_0%,rgba(7,8,13,0.3)_48%,transparent_72%)]" />
       <Link
         href={`/film/${film.slug}`}
-        className="poster-play-link absolute right-3 top-3 grid h-8 w-8 place-items-center rounded-full border border-cream/30 bg-bark/55 text-[0.6rem] text-cream opacity-0 backdrop-blur-sm transition-all duration-200 group-hover:scale-100 group-hover:opacity-100"
+        className="poster-play-link absolute right-3 top-3 grid h-8 w-8 place-items-center rounded-full border border-cream/30 bg-bark/55 text-[0.6rem] text-cream opacity-100 backdrop-blur-sm transition-all duration-200 group-hover:scale-100 sm:opacity-0 sm:group-hover:opacity-100"
       >
         ▶
       </Link>
